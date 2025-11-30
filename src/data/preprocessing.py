@@ -58,7 +58,7 @@ class DataPreprocessor:
                     elif strategy == 'mean':
                         fill_value = df_clean[column].mean()
                     else:  # most_frequent
-                        fill_value = df_clean[column].mode()[0] if not df_clean[column].mode().empty else 'Faible'
+                        fill_value = df_clean[column].mode()[0] if not df_clean[column].mode().empty else 'Bajo'  # Cambiado de 'Faible' a 'Bajo'
                     
                     df_clean[column].fillna(fill_value, inplace=True)
                     logger.info(f"🔧 Imputados {df_clean[column].isnull().sum()} valores en {column} con {strategy}")
@@ -66,12 +66,17 @@ class DataPreprocessor:
         return df_clean
     
     def encode_categorical_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Codifica variables categóricas de manera segura"""
+        """Codifica variables categóricas de manera segura - CORREGIDO A ESPAÑOL"""
         df_encoded = df.copy()
         
-        # Mapeo para involucramiento_parental
-        engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}
+        # Mapeo para involucramiento_parental - CORREGIDO A ESPAÑOL
+        engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}  # Cambiado de francés a español
         df_encoded['involucramiento_parental_codificado'] = df_encoded['involucramiento_parental'].map(engagement_mapping)
+        
+        # Manejar valores no mapeados
+        if df_encoded['involucramiento_parental_codificado'].isnull().any():
+            logger.warning("⚠️ Valores no mapeados en involucramiento_parental, usando valor por defecto (Bajo=0)")
+            df_encoded['involucramiento_parental_codificado'].fillna(0, inplace=True)
         
         # Codificar nivel_riesgo
         try:
@@ -79,9 +84,14 @@ class DataPreprocessor:
             logger.info(f"🎯 Niveles de riesgo codificados: {dict(enumerate(self.label_encoder_risk.classes_))}")
         except Exception as e:
             logger.error(f"Error codificando nivel_riesgo: {e}")
-            # Fallback: mapeo manual
-            risk_mapping = {'Faible': 0, 'Moyen': 1, 'Élevé': 2}
+            # Fallback: mapeo manual - CORREGIDO A ESPAÑOL
+            risk_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}  # Cambiado de francés a español
             df_encoded['nivel_riesgo_codificado'] = df_encoded['nivel_riesgo'].map(risk_mapping)
+            
+            # Manejar valores no mapeados
+            if df_encoded['nivel_riesgo_codificado'].isnull().any():
+                logger.warning("⚠️ Valores no mapeados en nivel_riesgo, usando valor por defecto (Bajo=0)")
+                df_encoded['nivel_riesgo_codificado'].fillna(0, inplace=True)
         
         return df_encoded
     
@@ -96,6 +106,13 @@ class DataPreprocessor:
                 logger.warning(f"⚠️ Características faltantes para escalado: {missing_features}")
             
             if available_features:
+                # Verificar que no haya valores infinitos o NaN
+                for feature in available_features:
+                    if df[feature].isnull().any():
+                        df[feature].fillna(df[feature].median(), inplace=True)
+                    if np.isinf(df[feature]).any():
+                        df[feature].replace([np.inf, -np.inf], df[feature].median(), inplace=True)
+                
                 scaled_values = self.scaler.fit_transform(df[available_features])
                 df_scaled = df.copy()
                 df_scaled[available_features] = scaled_values
@@ -139,7 +156,7 @@ def preprocess_student_data(df: pd.DataFrame) -> Tuple[Optional[pd.DataFrame], O
             'puntuacion_participacion', 
             'promedio_calificaciones',
             'actividades_extracurriculares',
-            'involucramiento_parental_codificado'
+            'involucramiento_parental_codificado'  # Usar la columna codificada
         ]
         
         # Verificar que todas las features estén disponibles
@@ -147,6 +164,13 @@ def preprocess_student_data(df: pd.DataFrame) -> Tuple[Optional[pd.DataFrame], O
         if len(available_features) != len(features):
             missing = set(features) - set(available_features)
             logger.warning(f"⚠️ Características no disponibles: {missing}")
+            
+            # Si falta la columna codificada, intentar crear una básica
+            if 'involucramiento_parental_codificado' not in available_features and 'involucramiento_parental' in df_encoded.columns:
+                logger.info("🔧 Creando codificación básica para involucramiento_parental")
+                basic_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}
+                df_encoded['involucramiento_parental_codificado'] = df_encoded['involucramiento_parental'].map(basic_mapping).fillna(0)
+                available_features.append('involucramiento_parental_codificado')
         
         X = df_encoded[available_features]
         y = df_encoded['nivel_riesgo_codificado']
@@ -168,7 +192,7 @@ def preprocess_student_data(df: pd.DataFrame) -> Tuple[Optional[pd.DataFrame], O
 
 def prepare_new_student_data(student_data: dict, scaler: StandardScaler, features: list) -> np.ndarray:
     """
-    Prepara datos de un nuevo estudiante para la predicción de manera robusta
+    Prepara datos de un nuevo estudiante para la predicción de manera robusta - CORREGIDO A ESPAÑOL
     """
     try:
         # Validar datos de entrada
@@ -187,9 +211,9 @@ def prepare_new_student_data(student_data: dict, scaler: StandardScaler, feature
             'actividades_extracurriculares': int(student_data.get('actividades_extracurriculares', 0)),
         }
         
-        # Mapear involucramiento parental de manera segura
-        engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}
-        involucramiento_parental = student_data.get('involucramiento_parental', 'Faible')
+        # Mapear involucramiento parental de manera segura - CORREGIDO A ESPAÑOL
+        engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}  # Cambiado de francés a español
+        involucramiento_parental = student_data.get('involucramiento_parental', 'Bajo')
         student_dict['involucramiento_parental_codificado'] = engagement_mapping.get(involucramiento_parental, 0)
         
         # Crear DataFrame
@@ -249,5 +273,4 @@ if __name__ == "__main__":
             print(f"   Clases: {summary['clases_codificadas']}")
             print(f"   Escalador ajustado: {summary['escalador_ajustado']}")
         else:
-
             print("❌ Error en el preprocesamiento")
