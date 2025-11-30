@@ -116,7 +116,18 @@ class ContinuousLearningManager:
     
     def get_learning_analytics(self) -> Dict[str, Any]:
         """Obtiene analytics detallados del aprendizaje continuo"""
-        base_analytics = self.feedback_system.get_feedback_analytics()
+        try:
+            # 🔧 CORRECCIÓN: Usar create_feedback_analytics en lugar de get_feedback_analytics
+            base_analytics = self.feedback_system.create_feedback_analytics()
+        except Exception as e:
+            logger.error(f"Error obteniendo analytics de feedback: {e}")
+            # Fallback si hay error
+            base_analytics = {
+                'summary': self.feedback_system.get_feedback_stats(),
+                'timeline_data': [],
+                'rating_distribution': {},
+                'improvement_trends': []
+            }
         
         learning_analytics = {
             'continuous_learning': {
@@ -128,8 +139,7 @@ class ContinuousLearningManager:
             'feedback_analytics': base_analytics
         }
         
-        return learning_analytics
-    
+        return learning_analytics    
     def _calculate_learning_efficiency(self) -> Dict[str, float]:
         """Calcula la eficiencia del aprendizaje"""
         total_feedback = self.learning_metrics['total_feedback_learned']
@@ -237,3 +247,4 @@ def get_continuous_learning_manager():
     """Obtiene el gestor de aprendizaje continuo"""
     global continuous_learning_manager
     return continuous_learning_manager
+
