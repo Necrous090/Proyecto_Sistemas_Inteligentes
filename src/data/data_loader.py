@@ -68,21 +68,21 @@ class DataLoader:
             'puntuacion_participacion': np.random.normal(6.5, 2, n_samples).clip(1, 10),
             'promedio_calificaciones': np.random.normal(14, 3, n_samples).clip(0, 20),
             'actividades_extracurriculares': np.random.randint(0, 6, n_samples),
-            'involucramiento_parental': np.random.choice(['Faible', 'Moyenne', 'Élevée'], n_samples, p=[0.3, 0.5, 0.2])
+            'involucramiento_parental': np.random.choice(['Bajo', 'Medio', 'Alto'], n_samples, p=[0.3, 0.5, 0.2])
         }
         
-        # Calcular riesgo basado en reglas simples
+        # Calcular riesgo basado en reglas simples - EN ESPAÑOL
         def calculate_risk(row):
             score = 0
             if row['tasa_asistencia'] < 70: score += 2
             if row['completacion_tareas'] < 60: score += 2
             if row['puntuacion_participacion'] < 4: score += 1
             if row['promedio_calificaciones'] < 10: score += 2
-            if row['involucramiento_parental'] == 'Faible': score += 1
+            if row['involucramiento_parental'] == 'Bajo': score += 1
             
-            if score >= 4: return 'Élevé'
-            elif score >= 2: return 'Moyen'
-            else: return 'Faible'
+            if score >= 4: return 'Alto'
+            elif score >= 2: return 'Medio'
+            else: return 'Bajo'
         
         df = pd.DataFrame(sample_data)
         df['nivel_riesgo'] = df.apply(calculate_risk, axis=1)
@@ -140,6 +140,21 @@ def load_student_data(file_path: Optional[str] = None, use_cache: bool = True) -
             for old_col, new_col in column_mapping.items():
                 if old_col in df.columns and new_col not in df.columns:
                     df = df.rename(columns={old_col: new_col})
+            
+            # Mapear valores categóricos del francés al español si es necesario
+            if 'involucramiento_parental' in df.columns:
+                df['involucramiento_parental'] = df['involucramiento_parental'].map({
+                    'Faible': 'Bajo',
+                    'Moyenne': 'Medio', 
+                    'Élevée': 'Alto'
+                }).fillna(df['involucramiento_parental'])
+            
+            if 'nivel_riesgo' in df.columns:
+                df['nivel_riesgo'] = df['nivel_riesgo'].map({
+                    'Faible': 'Bajo',
+                    'Moyen': 'Medio',
+                    'Élevé': 'Alto'
+                }).fillna(df['nivel_riesgo'])
         
         # Validaciones de columnas mejoradas
         required_columns = ['tasa_asistencia', 'completacion_tareas', 'puntuacion_participacion', 
@@ -305,11 +320,17 @@ def analyze_data_quality(df: pd.DataFrame) -> Dict[str, Any]:
             }
     
     # Anomalías
-    from scipy import stats
-    for col in numeric_cols:
-        z_scores = np.abs(stats.zscore(df[col].dropna()))
-        anomalies = (z_scores > 3).sum()
-        analysis['anomalias'][col] = anomalies
+    try:
+        from scipy import stats
+        for col in numeric_cols:
+            if df[col].notna().sum() > 0:  # Solo si hay valores no nulos
+                z_scores = np.abs(stats.zscore(df[col].dropna()))
+                anomalies = (z_scores > 3).sum()
+                analysis['anomalias'][col] = anomalies
+    except ImportError:
+        logger.warning("Scipy no disponible, omitiendo detección de anomalías")
+        for col in numeric_cols:
+            analysis['anomalias'][col] = 0
     
     return analysis
 
