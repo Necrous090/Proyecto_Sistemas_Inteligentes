@@ -1304,12 +1304,17 @@ elif page == "🔍 Análisis Individual Avanzado":
                                                 st.success(f"🔄 ¡Sistema actualizado automáticamente! Se procesaron {auto_process_result['feedback_processed']} feedbacks")
                                                 st.info(f"📈 Cambio en precisión: {auto_process_result.get('accuracy_change', 0):.4f}")
                                                 
-                                                # Mostrar métricas de aprendizaje
-                                                learning_analytics = continuous_manager.get_learning_analytics()
-                                                efficiency = learning_analytics['continuous_learning']['efficiency']
-                                                
-                                                st.metric("Eficiencia de Aprendizaje", f"{efficiency.get('utilization_rate', 0):.1f}%")
-                                                st.metric("Total Feedback Aprendido", continuous_manager.learning_metrics['total_feedback_learned'])
+                                                # Mostrar métricas de aprendizaje CON MANEJO DE ERRORES
+                                                try:
+                                                    learning_analytics = continuous_manager.get_learning_analytics()
+                                                    efficiency = learning_analytics['continuous_learning']['efficiency']
+                                                    
+                                                    st.metric("Eficiencia de Aprendizaje", f"{efficiency.get('utilization_rate', 0):.1f}%")
+                                                    st.metric("Total Feedback Aprendido", continuous_manager.learning_metrics['total_feedback_learned'])
+                                                except Exception as e:
+                                                    logger.error(f"Error mostrando métricas de aprendizaje: {e}")
+                                                    st.metric("Eficiencia de Aprendizaje", "N/A")
+                                                    st.metric("Total Feedback Aprendido", continuous_manager.learning_metrics['total_feedback_learned'])
                                                 
                                             else:
                                                 st.info(f"ℹ️ {auto_process_result.get('feedback_processed', 0)} feedbacks procesados (esperando más datos para actualizar modelo)")
@@ -1619,11 +1624,18 @@ elif page == "🔄 Aprendizaje Continuo":
         try:
             learning_analytics = continuous_manager.get_learning_analytics()
             
+            # Verificar que la estructura sea correcta
+            if 'continuous_learning' not in learning_analytics:
+                st.error("Estructura de analytics incorrecta")
+                return
+                
+            continuous_data = learning_analytics['continuous_learning']
+            
             col1, col2 = st.columns(2)
             
             with col1:
                 st.markdown("#### 📊 Eficiencia del Sistema")
-                efficiency = learning_analytics['continuous_learning']['efficiency']
+                efficiency = continuous_data.get('efficiency', {})
                 
                 st.metric("Puntuación de Eficiencia", f"{efficiency.get('efficiency_score', 0):.2%}")
                 st.metric("Feedback por Lote", f"{efficiency.get('feedback_per_batch', 0):.1f}")
@@ -1631,19 +1643,20 @@ elif page == "🔄 Aprendizaje Continuo":
             
             with col2:
                 st.markdown("#### 📈 Tendencias de Mejora")
-                trend = learning_analytics['continuous_learning']['improvement_trend']
+                trend = continuous_data.get('improvement_trend', {})
                 
                 trend_icons = {'improving': '📈', 'declining': '📉', 'stable': '➡️'}
+                trend_value = trend.get('trend', 'stable')
                 st.metric(
                     "Tendencia", 
-                    f"{trend_icons.get(trend['trend'], '📊')} {trend['trend'].title()}"
+                    f"{trend_icons.get(trend_value, '📊')} {trend_value.title()}"
                 )
                 st.metric("Mejora Promedio", f"{trend.get('avg_improvement', 0):.4f}")
                 st.metric("Mejora Total", f"{trend.get('total_improvement', 0):.4f}")
             
             # Gráfico de mejoras (simplificado)
             st.markdown("#### 🎯 Historial de Mejoras")
-            improvements = continuous_manager.learning_metrics['accuracy_improvements']
+            improvements = continuous_manager.learning_metrics.get('accuracy_improvements', [])
             
             if improvements:
                 improvement_data = pd.DataFrame(improvements)
@@ -1656,7 +1669,11 @@ elif page == "🔄 Aprendizaje Continuo":
                 
         except Exception as e:
             st.error(f"Error cargando analytics de aprendizaje: {e}")
-
+            # Mostrar información de depuración
+            st.info("**Información para depuración:**")
+            st.write(f"Tipo de learning_analytics: {type(learning_analytics) if 'learning_analytics' in locals() else 'No definido'}")
+            if 'learning_analytics' in locals():
+                st.write(f"Claves en learning_analytics: {list(learning_analytics.keys())}")
 # Página 4: Dashboard Avanzado (UNIFICADA)
 elif page == "📈 Dashboard Avanzado":
     st.header("📈 Dashboard Avanzado - Recomendaciones y Visualizaciones")
@@ -2027,6 +2044,7 @@ st.markdown("""
     Última actualización: """ + datetime.now().strftime("%Y-%m-%d %H:%M") + """</small>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
