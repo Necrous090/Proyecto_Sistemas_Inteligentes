@@ -35,6 +35,7 @@ try:
     from src.ml.model_training import load_latest_model, train_risk_prediction_model, train_advanced_risk_model
     from src.ml.recommendation_system import generate_recommendations, generate_contextual_recommendations, generate_proactive_alerts
     from src.ml.feedback_system import save_user_feedback, process_feedback, get_feedback_stats, get_recent_feedback, get_feedback_analytics, debug_feedback_system  # 🔧 AÑADIR debug_feedback_system
+    from src.ml.continuous_learning import init_continuous_learning, get_continuous_learning_manager  # 🔧 NUEVO: Aprendizaje continuo
 except ImportError as e:
     logger.error(f"Error de importación inicial: {e}")
     # Fallback: intentar importaciones alternativas
@@ -46,7 +47,9 @@ except ImportError as e:
         from ml.model_training import load_latest_model, train_risk_prediction_model, train_advanced_risk_model
         from ml.recommendation_system import generate_recommendations, generate_contextual_recommendations, generate_proactive_alerts
         from ml.feedback_system import save_user_feedback, process_feedback, get_feedback_stats, get_recent_feedback, get_feedback_analytics, debug_feedback_system  # 🔧 AÑADIR debug_feedback_system
+        from ml.continuous_learning import init_continuous_learning, get_continuous_learning_manager  # 🔧 NUEVO: Aprendizaje continuo
     except ImportError as e2:
+        logger.error(f"Error crítico de importación: {e2}")
         logger.error(f"Error crítico de importación: {e2}")
         st.error("""
         ❌ Error crítico: No se pudieron cargar los módulos del proyecto
@@ -116,6 +119,12 @@ except ImportError as e:
         
         def get_recent_feedback(limit):
             return []
+
+        def init_continuous_learning(feedback_system, model_training_module):
+            return None
+        
+        def get_continuous_learning_manager():
+            return None
         
         def get_feedback_analytics():
             return {'summary': {}, 'performance_metrics': {}}
@@ -598,6 +607,7 @@ def load_model_and_data():
         return None, None, None, None, None, None
 
 # Inicialización de la aplicación
+# Inicialización de la aplicación
 def initialize_app():
     """Inicializa la aplicación con manejo de estado mejorado"""
     if 'initialized' not in st.session_state:
@@ -606,10 +616,24 @@ def initialize_app():
         st.session_state.df = None
         st.session_state.analysis_results = {}
         st.session_state.feedback_submitted = False
+        st.session_state.continuous_learning_initialized = False  # 🔧 NUEVO
     
     # Cargar datos y modelo
     with st.spinner("🔄 Cargando sistema de recomendación educativa avanzado..."):
         df, X, y, model, le_risk, scaler = load_model_and_data()
+    
+    # 🔧 NUEVO: Inicializar aprendizaje continuo SI NO está inicializado
+    if not st.session_state.get('continuous_learning_initialized', False) and all([model is not None, le_risk is not None, scaler is not None]):
+        try:
+            from src.ml.feedback_system import feedback_system
+            from src.ml import model_training
+            continuous_manager = init_continuous_learning(feedback_system, model_training)
+            if continuous_manager:
+                st.session_state.continuous_learning_manager = continuous_manager
+                st.session_state.continuous_learning_initialized = True
+                logger.info("✅ Sistema de aprendizaje continuo inicializado")
+        except Exception as e:
+            logger.error(f"❌ Error inicializando aprendizaje continuo: {e}")
     
     if df is None or model is None:
         st.error("""
@@ -663,8 +687,9 @@ with st.sidebar:
             "🏠 Dashboard Principal",
             "📊 Analytics Educativos", 
             "🔍 Análisis Individual Avanzado",
-            "📈 Dashboard Avanzado",  # Pestaña unificada
+            "📈 Dashboard Avanzado",
             "💬 Sistema de Feedback",
+            "🔄 Aprendizaje Continuo",  # 🔧 NUEVA PESTAÑA
             "ℹ️ Acerca del Sistema"
         ],
         index=0
@@ -1239,7 +1264,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                                     placeholder="¿Alguna observación sobre las recomendaciones?",
                                     key="feedback_notes")
             
-            # 🔧 CORRECCIÓN: Botón de feedback con validación MEJORADA
+            # 🔧 NUEVO: Botón de feedback con PROCESAMIENTO AUTOMÁTICO
             if st.button("📤 Enviar Feedback", type="secondary", key="feedback_button"):
                 if not user_correction or user_correction == '':
                     st.error("❌ Por favor selecciona una corrección del nivel de riesgo")
@@ -1265,19 +1290,36 @@ elif page == "🔍 Análisis Individual Avanzado":
                                 st.success("✅ Feedback enviado exitosamente! ¡Gracias por contribuir al aprendizaje del sistema!")
                                 st.session_state.feedback_submitted = True
                                 
-                                # Procesar feedback
-                                if all([model is not None, le_risk is not None, scaler is not None]):
+                                # 🔄 NUEVO: PROCESAMIENTO AUTOMÁTICO CON APRENDIZAJE CONTINUO
+                                continuous_manager = st.session_state.get('continuous_learning_manager')
+                                if continuous_manager and all([model is not None, le_risk is not None, scaler is not None]):
                                     try:
-                                        process_result = process_feedback(model, le_risk, scaler)
-                                        if process_result.get('model_updated'):
-                                            st.info(f"🔄 Modelo actualizado con {process_result['processed']} nuevos ejemplos")
-                                        else:
-                                            if process_result.get('processed', 0) > 0:
-                                                st.info(f"ℹ️ {process_result['processed']} feedbacks procesados (modelo sin cambios)")
+                                        # Verificar y procesar automáticamente
+                                        auto_process_result = continuous_manager.check_and_process_feedback(
+                                            model, le_risk, scaler, batch_threshold=5
+                                        )
+                                        
+                                        if auto_process_result.get('processed', False):
+                                            if auto_process_result.get('model_updated', False):
+                                                st.success(f"🔄 ¡Sistema actualizado automáticamente! Se procesaron {auto_process_result['feedback_processed']} feedbacks")
+                                                st.info(f"📈 Cambio en precisión: {auto_process_result.get('accuracy_change', 0):.4f}")
+                                                
+                                                # Mostrar métricas de aprendizaje
+                                                learning_analytics = continuous_manager.get_learning_analytics()
+                                                efficiency = learning_analytics['continuous_learning']['efficiency']
+                                                
+                                                st.metric("Eficiencia de Aprendizaje", f"{efficiency.get('utilization_rate', 0):.1f}%")
+                                                st.metric("Total Feedback Aprendido", continuous_manager.learning_metrics['total_feedback_learned'])
+                                                
                                             else:
-                                                st.info("ℹ️ Feedback guardado para procesamiento posterior")
+                                                st.info(f"ℹ️ {auto_process_result.get('feedback_processed', 0)} feedbacks procesados (esperando más datos para actualizar modelo)")
+                                        else:
+                                            pending = auto_process_result.get('pending_feedback', 0)
+                                            needed = auto_process_result.get('needed_for_batch', 5)
+                                            st.info(f"📝 Feedback guardado. Pendientes: {pending}/5 para próximo procesamiento automático")
+                                            
                                     except Exception as e:
-                                        logger.error(f"Error procesando feedback: {e}")
+                                        logger.error(f"Error en procesamiento automático: {e}")
                                         st.info("💾 Feedback guardado para procesamiento posterior")
                                 else:
                                     st.info("💾 Feedback guardado para procesamiento posterior")
@@ -1479,6 +1521,141 @@ elif page == "💬 Sistema de Feedback":
                         st.error(f"Error eliminando feedback de prueba: {e}")
             else:
                 st.error(f"❌ Prueba de guardado fallida: {test_result.get('error', 'Error desconocido')}")
+
+# 🔧 NUEVA PÁGINA: Aprendizaje Continuo
+elif page == "🔄 Aprendizaje Continuo":
+    st.header("🔄 Dashboard de Aprendizaje Continuo")
+    
+    continuous_manager = st.session_state.get('continuous_learning_manager')
+    
+    if continuous_manager is None:
+        st.error("❌ Sistema de aprendizaje continuo no inicializado")
+        if st.button("🔄 Intentar Inicializar"):
+            try:
+                from src.ml.feedback_system import feedback_system
+                from src.ml import model_training
+                continuous_manager = init_continuous_learning(feedback_system, model_training)
+                if continuous_manager:
+                    st.session_state.continuous_learning_manager = continuous_manager
+                    st.session_state.continuous_learning_initialized = True
+                    st.success("✅ Sistema de aprendizaje continuo inicializado")
+                    st.rerun()
+                else:
+                    st.error("❌ No se pudo inicializar el sistema de aprendizaje continuo")
+            except Exception as e:
+                st.error(f"❌ Error inicializando: {e}")
+    else:
+        # Mostrar métricas principales
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(
+                "Lotes Procesados", 
+                continuous_manager.learning_metrics['total_batches_processed']
+            )
+        
+        with col2:
+            st.metric(
+                "Feedback Aprendido", 
+                continuous_manager.learning_metrics['total_feedback_learned']
+            )
+        
+        with col3:
+            st.metric(
+                "Versiones de Modelo", 
+                continuous_manager.learning_metrics['model_versions_created']
+            )
+        
+        with col4:
+            last_processed = continuous_manager.learning_metrics.get('last_processing_time')
+            if last_processed:
+                last_time = datetime.fromisoformat(last_processed.replace('Z', '+00:00'))
+                st.metric("Última Actualización", last_time.strftime("%d/%m %H:%M"))
+            else:
+                st.metric("Última Actualización", "Nunca")
+        
+        # Procesamiento manual
+        st.markdown("---")
+        st.subheader("🔄 Procesamiento Manual")
+        
+        col1, col2 = st.columns([1, 2])
+        
+        with col1:
+            if st.button("🔍 Verificar y Procesar", type="primary"):
+                if all([model is not None, le_risk is not None, scaler is not None]):
+                    with st.spinner("Verificando feedback pendiente..."):
+                        result = continuous_manager.check_and_process_feedback(model, le_risk, scaler)
+                        
+                        if result.get('processed', False):
+                            if result.get('model_updated', False):
+                                st.success(f"✅ Procesados {result['feedback_processed']} feedbacks")
+                                st.success(f"📈 Modelo actualizado - Cambio: {result.get('accuracy_change', 0):.4f}")
+                            else:
+                                st.info(f"ℹ️ {result.get('feedback_processed', 0)} feedbacks procesados")
+                        else:
+                            pending = result.get('pending_feedback', 0)
+                            needed = result.get('needed_for_batch', 0)
+                            st.info(f"📝 Pendientes: {pending}/5 feedbacks para procesamiento automático")
+                else:
+                    st.error("❌ Modelo no disponible para procesamiento")
+        
+        with col2:
+            # Mostrar estado actual
+            stats = get_feedback_stats()
+            pending = stats.get('pending_feedback', 0)
+            
+            st.progress(min(pending / 5, 1.0))
+            st.write(f"**Feedback pendiente:** {pending}/5 para procesamiento automático")
+            
+            if pending >= 5:
+                st.success("✅ Listo para procesamiento automático")
+            else:
+                st.info(f"🕒 Necesarios {5 - pending} más para procesamiento automático")
+        
+        # Analytics de aprendizaje
+        st.markdown("---")
+        st.subheader("📈 Analytics de Aprendizaje Continuo")
+        
+        try:
+            learning_analytics = continuous_manager.get_learning_analytics()
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("#### 📊 Eficiencia del Sistema")
+                efficiency = learning_analytics['continuous_learning']['efficiency']
+                
+                st.metric("Puntuación de Eficiencia", f"{efficiency.get('efficiency_score', 0):.2%}")
+                st.metric("Feedback por Lote", f"{efficiency.get('feedback_per_batch', 0):.1f}")
+                st.metric("Tasa de Utilización", f"{efficiency.get('utilization_rate', 0):.1f}%")
+            
+            with col2:
+                st.markdown("#### 📈 Tendencias de Mejora")
+                trend = learning_analytics['continuous_learning']['improvement_trend']
+                
+                trend_icons = {'improving': '📈', 'declining': '📉', 'stable': '➡️'}
+                st.metric(
+                    "Tendencia", 
+                    f"{trend_icons.get(trend['trend'], '📊')} {trend['trend'].title()}"
+                )
+                st.metric("Mejora Promedio", f"{trend.get('avg_improvement', 0):.4f}")
+                st.metric("Mejora Total", f"{trend.get('total_improvement', 0):.4f}")
+            
+            # Gráfico de mejoras (simplificado)
+            st.markdown("#### 🎯 Historial de Mejoras")
+            improvements = continuous_manager.learning_metrics['accuracy_improvements']
+            
+            if improvements:
+                improvement_data = pd.DataFrame(improvements)
+                improvement_data['timestamp'] = pd.to_datetime(improvement_data['timestamp'])
+                improvement_data = improvement_data.set_index('timestamp')
+                
+                st.line_chart(improvement_data['improvement'])
+            else:
+                st.info("📊 Aún no hay datos de mejora para mostrar")
+                
+        except Exception as e:
+            st.error(f"Error cargando analytics de aprendizaje: {e}")
 
 # Página 4: Dashboard Avanzado (UNIFICADA)
 elif page == "📈 Dashboard Avanzado":
@@ -1850,6 +2027,7 @@ st.markdown("""
     Última actualización: """ + datetime.now().strftime("%Y-%m-%d %H:%M") + """</small>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
