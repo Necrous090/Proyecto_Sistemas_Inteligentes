@@ -875,7 +875,15 @@ def initialize_app():
         st.session_state.df = None
         st.session_state.analysis_results = {}
         st.session_state.feedback_submitted = False
-        st.session_state.continuous_learning_initialized = False  # 🔧 NUEVO
+        st.session_state.continuous_learning_initialized = False
+        
+        # 🔄 NUEVO: Inicializar estadísticas rápidas
+        st.session_state.quick_stats = {
+            'total_analizados': 0,
+            'alto_riesgo_count': 0,
+            'promedio_general': 0,
+            'suma_grades': 0
+        }
     
     # Cargar datos y modelo
     with st.spinner("🔄 Cargando sistema de recomendación educativa avanzado..."):
@@ -957,23 +965,34 @@ with st.sidebar:
     st.markdown("---")
     
     # Estadísticas rápidas
+    st.markdown("---")
     st.subheader("📊 Estadísticas Rápidas")
+
     if df is not None:
         try:
             total_students = len(df)
             
-            # Compatibilidad con español y francés para riesgo alto
-            if 'nivel_riesgo' in df.columns:
-                if 'Alto' in df['nivel_riesgo'].values:
-                    high_risk = len(df[df['nivel_riesgo'] == 'Alto'])
-                elif 'Élevé' in df['nivel_riesgo'].values:
-                    high_risk = len(df[df['nivel_riesgo'] == 'Élevé'])
+            # Usar estadísticas de session_state si están disponibles, sino las del dataframe original
+            if 'quick_stats' in st.session_state and st.session_state.quick_stats['total_analizados'] > 0:
+                # Estadísticas actualizadas con análisis recientes
+                high_risk = st.session_state.quick_stats['alto_riesgo_count']
+                avg_grades = st.session_state.quick_stats['promedio_general']
+                total_analizados = st.session_state.quick_stats['total_analizados']
+            else:
+                # Estadísticas del dataframe original
+                if 'nivel_riesgo' in df.columns:
+                    if 'Alto' in df['nivel_riesgo'].values:
+                        high_risk = len(df[df['nivel_riesgo'] == 'Alto'])
+                    elif 'Élevé' in df['nivel_riesgo'].values:
+                        high_risk = len(df[df['nivel_riesgo'] == 'Élevé'])
+                    else:
+                        high_risk = 0
                 else:
                     high_risk = 0
-            else:
-                high_risk = 0
-                
-            avg_grades = df['promedio_calificaciones'].mean() if 'promedio_calificaciones' in df.columns else 0
+                    
+                avg_grades = df['promedio_calificaciones'].mean() if 'promedio_calificaciones' in df.columns else 0
+                total_analizados = 0
+            
             attendance_avg = df['tasa_asistencia'].mean() if 'tasa_asistencia' in df.columns else 0
             
             col1, col2 = st.columns(2)
@@ -984,6 +1003,13 @@ with st.sidebar:
                 st.metric("Promedio", f"{avg_grades:.1f}/20")
                 if total_students > 0:
                     st.metric("Tasa Riesgo", f"{high_risk/total_students*100:.1f}%")
+            
+            # 🔄 NUEVO: Mostrar contador de análisis recientes
+            if total_analizados > 0:
+                st.markdown("---")
+                st.subheader("📈 Análisis Recientes")
+                st.metric("Estudiantes Analizados", total_analizados)
+                
         except Exception as e:
             st.error("Error calculando estadísticas")
     
@@ -1410,10 +1436,10 @@ elif page == "🔍 Análisis Individual Avanzado":
     # 🔧 CORRECCIÓN: Manejar el análisis y guardar en session_state
     if submitted:
         if model is None:
-            st.error("""...""")  # Mantener tu código de error existente
+            st.error("Modelo no disponible")
         else:
             try:
-                # Crear datos del estudiante
+                # Crear datos del estudiante (tu código existente)
                 student_input = {
                     'tasa_asistencia': attendance,
                     'completacion_tareas': homework,
@@ -1423,16 +1449,39 @@ elif page == "🔍 Análisis Individual Avanzado":
                     'involucramiento_parental': parental
                 }
                 
-                # Generar recomendaciones
+                # Generar recomendaciones (tu código existente)
                 with st.spinner("🧠 Analizando datos con IA avanzada..."):
                     X_sample = X.head(100) if X is not None else None
                     results = generate_recommendations(student_input, model, le_risk, scaler, X_sample)
                 
-                # 🔧 CORRECCIÓN CRÍTICA: Guardar en session_state
+                # Guardar en session_state (tu código existente)
                 st.session_state.analysis_results = results
                 st.session_state.student_input = student_input
                 st.session_state.analysis_completed = True
-                st.session_state.feedback_submitted = False  # Resetear estado de feedback
+                st.session_state.feedback_submitted = False
+                
+                # 🔄 NUEVO: Actualizar estadísticas rápidas
+                if 'quick_stats' not in st.session_state:
+                    st.session_state.quick_stats = {
+                        'total_analizados': 0,
+                        'alto_riesgo_count': 0,
+                        'promedio_general': 0,
+                        'suma_grades': 0
+                    }
+                
+                # Incrementar contador de análisis
+                st.session_state.quick_stats['total_analizados'] += 1
+                
+                # Actualizar contador de alto riesgo si corresponde
+                if results['predicted_risk'] == 'Alto':
+                    st.session_state.quick_stats['alto_riesgo_count'] += 1
+                
+                # Actualizar promedio general
+                st.session_state.quick_stats['suma_grades'] += grades
+                st.session_state.quick_stats['promedio_general'] = (
+                    st.session_state.quick_stats['suma_grades'] / 
+                    st.session_state.quick_stats['total_analizados']
+                )
                 
                 st.success("✅ Análisis completado exitosamente!")
                 
