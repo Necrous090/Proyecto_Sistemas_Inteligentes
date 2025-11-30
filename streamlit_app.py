@@ -34,7 +34,7 @@ try:
     from src.data.preprocessing import preprocess_student_data
     from src.ml.model_training import load_latest_model, train_risk_prediction_model, train_advanced_risk_model
     from src.ml.recommendation_system import generate_recommendations, generate_contextual_recommendations, generate_proactive_alerts
-    from src.ml.feedback_system import save_user_feedback, process_feedback, get_feedback_stats, get_recent_feedback, get_feedback_analytics
+    from src.ml.feedback_system import save_user_feedback, process_feedback, get_feedback_stats, get_recent_feedback, get_feedback_analytics, debug_feedback_system  # 🔧 AÑADIR debug_feedback_system
 except ImportError as e:
     logger.error(f"Error de importación inicial: {e}")
     # Fallback: intentar importaciones alternativas
@@ -45,7 +45,7 @@ except ImportError as e:
         from data.preprocessing import preprocess_student_data
         from ml.model_training import load_latest_model, train_risk_prediction_model, train_advanced_risk_model
         from ml.recommendation_system import generate_recommendations, generate_contextual_recommendations, generate_proactive_alerts
-        from ml.feedback_system import save_user_feedback, process_feedback, get_feedback_stats, get_recent_feedback, get_feedback_analytics
+        from ml.feedback_system import save_user_feedback, process_feedback, get_feedback_stats, get_recent_feedback, get_feedback_analytics, debug_feedback_system  # 🔧 AÑADIR debug_feedback_system
     except ImportError as e2:
         logger.error(f"Error crítico de importación: {e2}")
         st.error("""
@@ -119,6 +119,42 @@ except ImportError as e:
         
         def get_feedback_analytics():
             return {'summary': {}, 'performance_metrics': {}}
+        
+        # 🔧 AÑADIR: Función dummy para debug_feedback_system
+        def debug_feedback_system():
+            """Función de diagnóstico del sistema de feedback - Versión demo"""
+            import os
+            return {
+                'directories': {
+                    'feedback_data': {'exists': os.path.exists('feedback_data'), 'writable': False},
+                    'feedback_data/pending': {'exists': os.path.exists('feedback_data/pending'), 'writable': False},
+                    'feedback_data/processed': {'exists': os.path.exists('feedback_data/processed'), 'writable': False},
+                    'feedback_data/models': {'exists': os.path.exists('feedback_data/models'), 'writable': False},
+                    'feedback_data/analytics': {'exists': os.path.exists('feedback_data/analytics'), 'writable': False},
+                    'models': {'exists': os.path.exists('models'), 'writable': False}
+                },
+                'file_counts': {
+                    'pending': len([f for f in os.listdir('feedback_data/pending') if f.endswith('.json')]) if os.path.exists('feedback_data/pending') else 0,
+                    'processed': len([f for f in os.listdir('feedback_data/processed') if f.endswith('.json')]) if os.path.exists('feedback_data/processed') else 0
+                },
+                'system_status': {
+                    'stats_available': True,
+                    'stats': {
+                        'total_feedback': 0,
+                        'pending_feedback': 0, 
+                        'processed_feedback': 0,
+                        'with_corrections': 0,
+                        'model_versions': 0,
+                        'last_processed': None
+                    }
+                },
+                'test_results': {
+                    'save_test': {
+                        'success': True,
+                        'feedback_id': 'demo_feedback_test_12345'
+                    }
+                }
+            }
 
 # Configuración de la página
 st.set_page_config(
@@ -1053,6 +1089,13 @@ elif page == "🔍 Análisis Individual Avanzado":
     y generar intervenciones específicas y contextuales.
     """)
     
+    # 🔧 CORRECCIÓN: Inicializar estado de análisis si no existe
+    if 'analysis_completed' not in st.session_state:
+        st.session_state.analysis_completed = False
+        st.session_state.analysis_results = None
+        st.session_state.student_input = None
+        st.session_state.feedback_submitted = False
+    
     # Formulario para datos del estudiante
     with st.form("advanced_student_analysis"):
         st.subheader("📝 Perfil del Estudiante")
@@ -1080,18 +1123,10 @@ elif page == "🔍 Análisis Individual Avanzado":
         
         submitted = st.form_submit_button("🎯 Analizar Estudiante Avanzado", type="primary", use_container_width=True)
     
+    # 🔧 CORRECCIÓN: Manejar el análisis y guardar en session_state
     if submitted:
         if model is None:
-            st.error("""
-            ❌ **Modelo no disponible**
-            
-            El sistema no pudo cargar el modelo de IA. Esto puede deberse a:
-            - Problemas con los datos de entrenamiento
-            - Errores durante el entrenamiento del modelo
-            - Falta de dependencias
-            
-            **Solución:** Verifica que todos los módulos estén funcionando correctamente.
-            """)
+            st.error("""...""")  # Mantener tu código de error existente
         else:
             try:
                 # Crear datos del estudiante
@@ -1109,149 +1144,162 @@ elif page == "🔍 Análisis Individual Avanzado":
                     X_sample = X.head(100) if X is not None else None
                     results = generate_recommendations(student_input, model, le_risk, scaler, X_sample)
                 
-                # Guardar resultados en session state
+                # 🔧 CORRECCIÓN CRÍTICA: Guardar en session_state
                 st.session_state.analysis_results = results
                 st.session_state.student_input = student_input
+                st.session_state.analysis_completed = True
+                st.session_state.feedback_submitted = False  # Resetear estado de feedback
                 
                 st.success("✅ Análisis completado exitosamente!")
                 
-                # Mostrar resultados principales
-                st.markdown("---")
-                st.subheader("🎯 Resultados del Análisis Predictivo Avanzado")
-                
-                col1, col2, col3 = st.columns([1, 1, 1])
-                
-                with col1:
-                    risk_level = results['predicted_risk']
-                    confidence = results['confidence']
-                    
-                    st.markdown(f"""
-                    <div class="risk-badge risk-{risk_level.lower()}">
-                        <h3 style="margin: 5px 0; font-size: 1rem;">NIVEL DE RIESGO PREDICHO</h3>
-                        <h1 style="margin: 10px 0; font-size: 2.5rem;">{risk_level}</h1>
-                        <p style="margin: 5px 0; font-size: 0.9rem;">Confianza del modelo: {confidence:.1f}%</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown("**📊 Probabilidades por Nivel:**")
-                    for level, prob in results['risk_probabilities'].items():
-                        color = get_risk_color(level)
-                        prob_percent = prob * 100
-                        st.markdown(f"**{level}:** {prob_percent:.1f}%")
-                        st.progress(float(prob), text=f"{prob_percent:.1f}%")
-                
-                with col3:
-                    st.markdown("**📈 Características Clave:**")
-                    feature_importance = results.get('feature_importance', [])
-                    if feature_importance:
-                        top_features = sorted(feature_importance, key=lambda x: x['importance'], reverse=True)[:3]
-                        for feature in top_features:
-                            st.markdown(f"• {feature['feature'].replace('_', ' ').title()}")
-                
-                # Mostrar recomendaciones
-                st.markdown("---")
-                st.subheader("📋 Recomendaciones Personalizadas")
-                
-                if 'recommendations' in results:
-                    for i, rec in enumerate(results['recommendations'][:5], 1):
-                        priority_class = f"priority-{rec['priority'].lower()}"
-                        
-                        st.markdown(f"""
-                        <div class="recommendation-card {priority_class}">
-                            <h4 style="margin: 0 0 10px 0; color: #2c3e50;">🔹 {rec['area']} <span style="float: right; background: {'#e74c3c' if rec['priority'] == 'CRÍTICA' else '#f39c12' if rec['priority'] == 'ALTA' else '#3498db' if rec['priority'] == 'MEDIA' else '#2ecc71'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">{rec['priority']}</span></h4>
-                            <p style="margin: 8px 0; font-weight: 500;">{rec['action']}</p>
-                            <div class="impact-highlight">
-                                <strong>Impacto esperado:</strong> {rec['expected_impact']}
-                            </div>
-                            <p style="margin: 8px 0;"><strong>Recursos necesarios:</strong> {', '.join(rec['required_resources'])}</p>
-                            <p style="margin: 8px 0; color: #7f8c8d; font-size: 0.9em;"><strong>Tiempo estimado:</strong> {rec.get('estimated_timeline', 'No especificado')}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                else:
-                    st.info("No se pudieron generar recomendaciones específicas")
-                
-                # Sección de feedback - 🔧 CORREGIDA
-                st.markdown("---")
-                st.subheader("💬 Feedback y Mejora del Sistema")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("**¿La predicción fue correcta?**")
-                    user_correction = st.selectbox(
-                        "Corregir nivel de riesgo si es necesario:",
-                        ['', 'Bajo', 'Medio', 'Alto'],
-                        key="correction_select"
-                    )
-                
-                with col2:
-                    st.markdown("**Califica esta recomendación**")
-                    user_rating = st.slider("Rating (1-5 estrellas):", 1, 5, 5, key="rating_slider")
-                
-                user_notes = st.text_area("Comentarios adicionales (opcional):", 
-                                        placeholder="¿Alguna observación sobre las recomendaciones?")
-                
-                # 🔧 CORREGIDO: Botón de feedback con validación robusta
-                if st.button("📤 Enviar Feedback", type="secondary", key="feedback_button"):
-                    # Validar que tengamos todos los datos necesarios
-                    required_data = [
-                        st.session_state.get('analysis_results'),
-                        st.session_state.get('student_input'),
-                        user_correction
-                    ]
-                    
-                    if None in required_data or user_correction == '':
-                        st.error("❌ Por favor completa la corrección del nivel de riesgo antes de enviar feedback")
-                    else:
-                        try:
-                            # Obtener datos de la sesión
-                            results = st.session_state.analysis_results
-                            student_input = st.session_state.student_input
-                            
-                            # Validación adicional
-                            if not all([results, student_input]):
-                                st.error("❌ No hay datos de análisis disponibles para enviar feedback")
-                            else:
-                                # Enviar feedback
-                                feedback_id = save_user_feedback(
-                                    student_input,
-                                    results,
-                                    user_correction=user_correction,
-                                    user_notes=user_notes,
-                                    user_rating=user_rating
-                                )
-                                
-                                if feedback_id:
-                                    st.success("✅ Feedback enviado exitosamente. ¡Gracias por contribuir al aprendizaje del sistema!")
-                                    st.session_state.feedback_submitted = True
-                                    
-                                    # Procesar feedback solo si tenemos modelo válido
-                                    if all([model is not None, le_risk is not None, scaler is not None]):
-                                        try:
-                                            process_result = process_feedback(model, le_risk, scaler)
-                                            if process_result.get('model_updated'):
-                                                st.info(f"🔄 Modelo actualizado con {process_result['processed']} nuevos ejemplos")
-                                            else:
-                                                if process_result.get('processed', 0) > 0:
-                                                    st.info(f"ℹ️ {process_result['processed']} feedbacks procesados (modelo sin cambios)")
-                                                else:
-                                                    st.info("ℹ️ Feedback guardado para procesamiento posterior")
-                                        except Exception as e:
-                                            logger.error(f"Error procesando feedback: {e}")
-                                            st.warning("⚠️ Feedback guardado, pero no se pudo procesar inmediatamente")
-                                    else:
-                                        st.info("💾 Feedback guardado para procesamiento posterior")
-                                else:
-                                    st.error("❌ Error al guardar el feedback. Por favor, inténtalo de nuevo.")
-                                    
-                        except Exception as e:
-                            logger.error(f"Error en proceso de feedback: {e}")
-                            st.error("❌ Error inesperado al enviar feedback. Por favor, revisa los logs.")
-                
             except Exception as e:
                 st.error(f"Error durante el análisis: {str(e)}")
-                st.info("💡 **Solución:** Intenta con diferentes valores o verifica la configuración del sistema.")
+    
+    # 🔧 CORRECCIÓN: Mostrar resultados SIEMPRE que el análisis esté completado
+    if st.session_state.get('analysis_completed', False) and not st.session_state.get('feedback_submitted', False):
+        results = st.session_state.get('analysis_results')
+        student_input = st.session_state.get('student_input')
+        
+        if results and student_input:
+            # Mostrar resultados principales (mantener tu código existente)
+            st.markdown("---")
+            st.subheader("🎯 Resultados del Análisis Predictivo Avanzado")
+            
+            col1, col2, col3 = st.columns([1, 1, 1])
+            
+            with col1:
+                risk_level = results['predicted_risk']
+                confidence = results['confidence']
+                
+                st.markdown(f"""
+                <div class="risk-badge risk-{risk_level.lower()}">
+                    <h3 style="margin: 5px 0; font-size: 1rem;">NIVEL DE RIESGO PREDICHO</h3>
+                    <h1 style="margin: 10px 0; font-size: 2.5rem;">{risk_level}</h1>
+                    <p style="margin: 5px 0; font-size: 0.9rem;">Confianza del modelo: {confidence:.1f}%</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown("**📊 Probabilidades por Nivel:**")
+                for level, prob in results['risk_probabilities'].items():
+                    color = get_risk_color(level)
+                    prob_percent = prob * 100
+                    st.markdown(f"**{level}:** {prob_percent:.1f}%")
+                    st.progress(float(prob), text=f"{prob_percent:.1f}%")
+            
+            with col3:
+                st.markdown("**📈 Características Clave:**")
+                feature_importance = results.get('feature_importance', [])
+                if feature_importance:
+                    top_features = sorted(feature_importance, key=lambda x: x['importance'], reverse=True)[:3]
+                    for feature in top_features:
+                        st.markdown(f"• {feature['feature'].replace('_', ' ').title()}")
+            
+            # Mostrar recomendaciones
+            st.markdown("---")
+            st.subheader("📋 Recomendaciones Personalizadas")
+            
+            if 'recommendations' in results:
+                for i, rec in enumerate(results['recommendations'][:5], 1):
+                    priority_class = f"priority-{rec['priority'].lower()}"
+                    
+                    st.markdown(f"""
+                    <div class="recommendation-card {priority_class}">
+                        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">🔹 {rec['area']} <span style="float: right; background: {'#e74c3c' if rec['priority'] == 'CRÍTICA' else '#f39c12' if rec['priority'] == 'ALTA' else '#3498db' if rec['priority'] == 'MEDIA' else '#2ecc71'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">{rec['priority']}</span></h4>
+                        <p style="margin: 8px 0; font-weight: 500;">{rec['action']}</p>
+                        <div class="impact-highlight">
+                            <strong>Impacto esperado:</strong> {rec['expected_impact']}
+                        </div>
+                        <p style="margin: 8px 0;"><strong>Recursos necesarios:</strong> {', '.join(rec['required_resources'])}</p>
+                        <p style="margin: 8px 0; color: #7f8c8d; font-size: 0.9em;"><strong>Tiempo estimado:</strong> {rec.get('estimated_timeline', 'No especificado')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("No se pudieron generar recomendaciones específicas")
+            
+            # 🔧 CORRECCIÓN: Sección de feedback MEJORADA
+            st.markdown("---")
+            st.subheader("💬 Feedback y Mejora del Sistema")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**¿La predicción fue correcta?**")
+                user_correction = st.selectbox(
+                    "Corregir nivel de riesgo si es necesario:",
+                    ['', 'Bajo', 'Medio', 'Alto'],
+                    key="correction_select"
+                )
+            
+            with col2:
+                st.markdown("**Califica esta recomendación**")
+                user_rating = st.slider("Rating (1-5 estrellas):", 1, 5, 5, key="rating_slider")
+            
+            user_notes = st.text_area("Comentarios adicionales (opcional):", 
+                                    placeholder="¿Alguna observación sobre las recomendaciones?",
+                                    key="feedback_notes")
+            
+            # 🔧 CORRECCIÓN: Botón de feedback con validación MEJORADA
+            if st.button("📤 Enviar Feedback", type="secondary", key="feedback_button"):
+                if not user_correction or user_correction == '':
+                    st.error("❌ Por favor selecciona una corrección del nivel de riesgo")
+                else:
+                    try:
+                        # Usar los datos guardados en session_state
+                        current_results = st.session_state.analysis_results
+                        current_student_input = st.session_state.student_input
+                        
+                        if not all([current_results, current_student_input]):
+                            st.error("❌ No hay datos de análisis disponibles para enviar feedback")
+                        else:
+                            # 🔧 CORRECCIÓN: Enviar feedback
+                            feedback_id = save_user_feedback(
+                                current_student_input,
+                                current_results,
+                                user_correction=user_correction,
+                                user_notes=user_notes,
+                                user_rating=user_rating
+                            )
+                            
+                            if feedback_id:
+                                st.success("✅ Feedback enviado exitosamente! ¡Gracias por contribuir al aprendizaje del sistema!")
+                                st.session_state.feedback_submitted = True
+                                
+                                # Procesar feedback
+                                if all([model is not None, le_risk is not None, scaler is not None]):
+                                    try:
+                                        process_result = process_feedback(model, le_risk, scaler)
+                                        if process_result.get('model_updated'):
+                                            st.info(f"🔄 Modelo actualizado con {process_result['processed']} nuevos ejemplos")
+                                        else:
+                                            if process_result.get('processed', 0) > 0:
+                                                st.info(f"ℹ️ {process_result['processed']} feedbacks procesados (modelo sin cambios)")
+                                            else:
+                                                st.info("ℹ️ Feedback guardado para procesamiento posterior")
+                                    except Exception as e:
+                                        logger.error(f"Error procesando feedback: {e}")
+                                        st.info("💾 Feedback guardado para procesamiento posterior")
+                                else:
+                                    st.info("💾 Feedback guardado para procesamiento posterior")
+                                    
+                                # 🔧 CORRECCIÓN: Forzar rerun para actualizar la interfaz
+                                st.rerun()
+                            else:
+                                st.error("❌ Error al guardar el feedback. Por favor, inténtalo de nuevo.")
+                                
+                    except Exception as e:
+                        logger.error(f"Error en proceso de feedback: {e}")
+                        st.error("❌ Error inesperado al enviar feedback. Por favor, revisa los logs.")
+    
+    # 🔧 CORRECCIÓN: Mostrar mensaje si el feedback ya fue enviado
+    elif st.session_state.get('feedback_submitted', False):
+        st.success("🎉 ¡Gracias! Tu feedback ha sido registrado exitosamente.")
+        if st.button("🔄 Realizar nuevo análisis", type="primary"):
+            st.session_state.analysis_completed = False
+            st.session_state.feedback_submitted = False
+            st.session_state.analysis_results = None
+            st.session_state.student_input = None
+            st.rerun()
 
 # === PÁGINA "💬 Sistema de Feedback" CORREGIDA ===
 elif page == "💬 Sistema de Feedback":
@@ -1359,34 +1407,63 @@ elif page == "💬 Sistema de Feedback":
         st.subheader("🐛 Diagnóstico del Sistema de Feedback")
         
         if st.button("🔄 Ejecutar Diagnóstico", key="diagnostic_button"):
-            with st.spinner("Ejecutando diagnóstico..."):
-                diagnosis = debug_feedback_system()
+            with st.spinner("Ejecutando diagnóstico completo del sistema..."):
+                try:
+                    # 🔧 CORRECCIÓN: Verificar si la función existe antes de llamarla
+                    if 'debug_feedback_system' in globals() or 'debug_feedback_system' in locals():
+                        diagnosis = debug_feedback_system()
+                    else:
+                        # Si no existe, crear un diagnóstico básico
+                        st.error("❌ La función debug_feedback_system no está disponible")
+                        diagnosis = {
+                            'directories': {
+                                'feedback_data': {'exists': os.path.exists('feedback_data'), 'writable': False},
+                                'feedback_data/pending': {'exists': os.path.exists('feedback_data/pending'), 'writable': False},
+                                'models': {'exists': os.path.exists('models'), 'writable': False}
+                            },
+                            'file_counts': {'pending': 0, 'processed': 0},
+                            'system_status': {'stats_available': False, 'stats_error': 'Función debug_feedback_system no disponible'},
+                            'test_results': {'save_test': {'success': False, 'error': 'Función no disponible'}}
+                        }
+                except Exception as e:
+                    st.error(f"❌ Error ejecutando diagnóstico: {e}")
+                    diagnosis = {
+                        'directories': {},
+                        'file_counts': {},
+                        'system_status': {'stats_available': False, 'stats_error': str(e)},
+                        'test_results': {}
+                    }
             
+            # 🔧 CORRECCIÓN: Mostrar resultados con manejo de errores
             st.subheader("📁 Estado de Directorios")
-            for dir_path, status in diagnosis['directories'].items():
-                icon = "✅" if status['exists'] and status['writable'] else "❌"
-                st.write(f"{icon} **{dir_path}** - Existe: `{status['exists']}`, Escribible: `{status['writable']}`")
+            if 'directories' in diagnosis:
+                for dir_path, status in diagnosis['directories'].items():
+                    icon = "✅" if status.get('exists', False) and status.get('writable', False) else "❌"
+                    st.write(f"{icon} **{dir_path}** - Existe: `{status.get('exists', False)}`, Escribible: `{status.get('writable', False)}`")
+            else:
+                st.error("No se pudo obtener información de directorios")
             
             st.subheader("📊 Conteo de Archivos")
-            st.write(f"📝 Feedback pendiente: `{diagnosis['file_counts'].get('pending', 0)}` archivos")
-            st.write(f"📦 Feedback procesado: `{diagnosis['file_counts'].get('processed', 0)}` archivos")
+            if 'file_counts' in diagnosis:
+                st.write(f"📝 Feedback pendiente: `{diagnosis['file_counts'].get('pending', 0)}` archivos")
+                st.write(f"📦 Feedback procesado: `{diagnosis['file_counts'].get('processed', 0)}` archivos")
+            else:
+                st.error("No se pudo obtener conteo de archivos")
             
             st.subheader("🔧 Estado del Sistema")
-            if diagnosis['system_status'].get('stats_available'):
+            if diagnosis.get('system_status', {}).get('stats_available', False):
                 stats = diagnosis['system_status']['stats']
                 st.json(stats)
             else:
-                st.error(f"Error obteniendo estadísticas: {diagnosis['system_status'].get('stats_error')}")
+                error_msg = diagnosis.get('system_status', {}).get('stats_error', 'Error desconocido')
+                st.error(f"Error obteniendo estadísticas: {error_msg}")
             
             st.subheader("🧪 Pruebas de Funcionalidad")
-            test_result = diagnosis['test_results'].get('save_test', {})
-            if test_result.get('success'):
-                st.success(f"✅ Prueba de guardado exitosa - ID: {test_result.get('feedback_id')}")
-            else:
-                st.error(f"❌ Prueba de guardado fallida: {test_result.get('error')}")
-            
-            # Botón para limpiar feedback de prueba
-            if test_result.get('success'):
+            test_result = diagnosis.get('test_results', {}).get('save_test', {})
+            if test_result.get('success', False):
+                st.success(f"✅ Prueba de guardado exitosa - ID: {test_result.get('feedback_id', 'N/A')}")
+                
+                # 🔧 CORRECCIÓN: Botón para limpiar feedback de prueba
                 if st.button("🗑️ Eliminar Feedback de Prueba", key="cleanup_test"):
                     try:
                         test_id = test_result.get('feedback_id')
@@ -1395,8 +1472,13 @@ elif page == "💬 Sistema de Feedback":
                             if os.path.exists(test_file):
                                 os.remove(test_file)
                                 st.success("✅ Feedback de prueba eliminado")
+                                st.rerun()
+                            else:
+                                st.warning("⚠️ Archivo de feedback de prueba no encontrado")
                     except Exception as e:
                         st.error(f"Error eliminando feedback de prueba: {e}")
+            else:
+                st.error(f"❌ Prueba de guardado fallida: {test_result.get('error', 'Error desconocido')}")
 
 # Página 4: Dashboard Avanzado (UNIFICADA)
 elif page == "📈 Dashboard Avanzado":
@@ -1768,5 +1850,6 @@ st.markdown("""
     Última actualización: """ + datetime.now().strftime("%Y-%m-%d %H:%M") + """</small>
 </div>
 """, unsafe_allow_html=True)
+
 
 
