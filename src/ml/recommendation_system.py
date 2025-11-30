@@ -81,7 +81,7 @@ class RecommendationEngine:
             'completacion_tareas': {'threshold': 70, 'weight': 0.22},
             'puntuacion_participacion': {'threshold': 5.0, 'weight': 0.15},
             'promedio_calificaciones': {'threshold': 12.0, 'weight': 0.30},
-            'involucramiento_parental': {'threshold': 'Moyenne', 'weight': 0.28}
+            'involucramiento_parental': {'threshold': 'Medio', 'weight': 0.28}
         }
 
 class AdvancedRecommendationEngine(RecommendationEngine):
@@ -193,8 +193,8 @@ def validate_student_data(student_data: Dict[str, Any]) -> Tuple[bool, str]:
             if not validator(value):
                 return False, f"{field} fuera de rango {range_val}: {value}"
         
-        # Validar engagement parental
-        valid_engagement = ['Faible', 'Moyenne', 'Élevée']
+        # Validar engagement parental - CORREGIDO A ESPAÑOL
+        valid_engagement = ['Bajo', 'Medio', 'Alto']
         if student_data['involucramiento_parental'] not in valid_engagement:
             return False, f"involucramiento_parental inválido. Valores permitidos: {valid_engagement}"
         
@@ -206,8 +206,8 @@ def validate_student_data(student_data: Dict[str, Any]) -> Tuple[bool, str]:
 def prepare_student_for_prediction(student_data: Dict, scaler: Any, features: List[str]) -> np.ndarray:
     """Prepara los datos de un estudiante para la predicción de manera robusta"""
     try:
-        # Mapear engagement parental
-        engagement_mapping = {'Faible': 0, 'Moyenne': 1, 'Élevée': 2}
+        # Mapear engagement parental - CORREGIDO A ESPAÑOL
+        engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}
         
         student_dict = {
             'tasa_asistencia': float(student_data['tasa_asistencia']),
@@ -329,11 +329,12 @@ def generate_personalized_recommendations(student_data: Dict, risk_level: str,
             'weight': 0.30
         })
     
-    if student_data['involucramiento_parental'] == 'Faible':
+    # CORREGIDO: Ahora usa los valores en español
+    if student_data['involucramiento_parental'] == 'Bajo':
         critical_areas.append({
             'area': 'Involucramiento Parental', 
             'current_value': student_data['involucramiento_parental'],
-            'threshold': 'Moyenne',
+            'threshold': 'Medio',
             'priority': 'ALTA',
             'weight': 0.28
         })
@@ -426,7 +427,7 @@ def generate_area_recommendation(area_info: Dict, student_data: Dict) -> Dict:
 def generate_risk_recommendation(risk_level: str, num_critical_areas: int) -> Dict:
     """Genera una recomendación general basada en el nivel de riesgo"""
     risk_recommendations = {
-        'Élevé': {
+        'Alto': {  # CORREGIDO: 'Élevé' → 'Alto'
             'area': 'Intervención Inmediata',
             'priority': 'CRÍTICA',
             'action': 'Asignar tutor personalizado y crear plan de mejora de 30 días con seguimiento diario y evaluaciones semanales',
@@ -434,7 +435,7 @@ def generate_risk_recommendation(risk_level: str, num_critical_areas: int) -> Di
             'required_resources': ['Tutor dedicado', 'Plan personalizado', 'Evaluaciones diarias', 'Reuniones con padres'],
             'estimated_timeline': '2-4 semanas'
         },
-        'Moyen': {
+        'Medio': {  # CORREGIDO: 'Moyen' → 'Medio'
             'area': 'Mejora Progresiva',
             'priority': 'ALTA',
             'action': 'Implementar plan de mejora de 8 semanas con monitoreo semanal y apoyo tutorial focalizado en las áreas identificadas',
@@ -442,7 +443,7 @@ def generate_risk_recommendation(risk_level: str, num_critical_areas: int) -> Di
             'required_resources': ['Plan de mejora', 'Sesiones de tutoría semanales', 'Monitoreo de progreso'],
             'estimated_timeline': '6-8 semanas'
         },
-        'Faible': {
+        'Bajo': {  # CORREGIDO: 'Faible' → 'Bajo'
             'area': 'Mantenimiento y Desarrollo',
             'priority': 'BAJA',
             'action': 'Monitoreo mensual y actividades de enriquecimiento académico para mantener el buen desempeño y prevenir retrocesos',
@@ -452,7 +453,7 @@ def generate_risk_recommendation(risk_level: str, num_critical_areas: int) -> Di
         }
     }
     
-    return risk_recommendations.get(risk_level, risk_recommendations['Faible'])
+    return risk_recommendations.get(risk_level, risk_recommendations['Bajo'])
 
 def get_estimated_timeline(priority: str) -> str:
     """Obtiene el tiempo estimado para ver resultados según la prioridad"""
@@ -518,7 +519,7 @@ def generate_justification(student_data: Dict, risk_level: str, risk_proba: np.n
     
     **📈 Proyección de Impacto:**
     La implementación de estas recomendaciones, según nuestro modelo, podría:
-    - Reducir el nivel de riesgo de "{risk_level}" a "{'Moyen' if risk_level == 'Élevé' else 'Faible'}" en {get_estimated_timeline('ALTA')}
+    - Reducir el nivel de riesgo de "{risk_level}" a "{'Medio' if risk_level == 'Alto' else 'Bajo'}" en {get_estimated_timeline('ALTA')}
     - Mejorar el rendimiento académico en un 15-25% según indicadores similares
     - Aumentar la probabilidad de éxito académico en un 40-60%
     
@@ -831,7 +832,7 @@ def count_risk_factors(student_data: Dict) -> int:
         if student_data.get(factor, threshold + 1) < threshold:
             risk_factors += 1
     
-    if student_data.get('involucramiento_parental') == 'Faible':
+    if student_data.get('involucramiento_parental') == 'Bajo':  # CORREGIDO
         risk_factors += 1
     
     if student_data.get('actividades_extracurriculares', 1) == 0:
@@ -870,7 +871,7 @@ if __name__ == "__main__":
             from src.ml.model_training import train_risk_prediction_model
 
             model, accuracy, _ = train_risk_prediction_model(X, y)
-            logger.info(f"✅ Modelo entrenado con accuracy: {accuracy:.4f}")
+            logger.info(f"✅ Modelo entrenado con precisión: {accuracy:.4f}")
         else:
             model = model_data['model']
             logger.info("✅ Modelo cargado exitosamente")
@@ -882,7 +883,7 @@ if __name__ == "__main__":
             'puntuacion_participacion': 4.0,
             'promedio_calificaciones': 9.5,
             'actividades_extracurriculares': 0,
-            'involucramiento_parental': 'Faible'
+            'involucramiento_parental': 'Bajo'  # CORREGIDO
         }
         
         # Generar recomendaciones
