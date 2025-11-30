@@ -70,7 +70,7 @@ class DataPreprocessor:
         df_encoded = df.copy()
         
         # Mapeo para involucramiento_parental
-        engagement_mapping = {'Faible': 0, 'Moyenne': 1, 'Élevée': 2}
+        engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}
         df_encoded['involucramiento_parental_codificado'] = df_encoded['involucramiento_parental'].map(engagement_mapping)
         
         # Codificar nivel_riesgo
@@ -188,7 +188,7 @@ def prepare_new_student_data(student_data: dict, scaler: StandardScaler, feature
         }
         
         # Mapear involucramiento parental de manera segura
-        engagement_mapping = {'Faible': 0, 'Moyenne': 1, 'Élevée': 2}
+        engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}
         involucramiento_parental = student_data.get('involucramiento_parental', 'Faible')
         student_dict['involucramiento_parental_codificado'] = engagement_mapping.get(involucramiento_parental, 0)
         
@@ -249,4 +249,5 @@ if __name__ == "__main__":
             print(f"   Clases: {summary['clases_codificadas']}")
             print(f"   Escalador ajustado: {summary['escalador_ajustado']}")
         else:
+
             print("❌ Error en el preprocesamiento")
