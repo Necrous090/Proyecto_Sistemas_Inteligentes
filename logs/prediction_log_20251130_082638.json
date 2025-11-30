@@ -1,0 +1,27 @@
+{
+  "timestamp": "20251130_082638",
+  "student_data": {
+    "tasa_asistencia": 75,
+    "completacion_tareas": 60,
+    "puntuacion_participacion": 4.0,
+    "promedio_calificaciones": 9.5,
+    "actividades_extracurriculares": 0,
+    "involucramiento_parental": "Faible"
+  },
+  "prediction": "Moyen",
+  "confidence": 99.5,
+  "risk_probabilities": {
+    "Faible": 0.0,
+    "Moyen": 0.995,
+    "Élevé": 0.005
+  },
+  "recommendation_count": 6,
+  "features_used": [
+    "tasa_asistencia",
+    "completacion_tareas",
+    "puntuacion_participacion",
+    "promedio_calificaciones",
+    "actividades_extracurriculares",
+    "involucramiento_parental"
+  ]
+}

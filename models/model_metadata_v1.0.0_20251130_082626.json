@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0_20251130_082626",
+  "timestamp": "20251130_082626",
+  "training_date": "2025-11-30T08:26:26.935713",
+  "accuracy": 0.9833333333333333,
+  "features": [
+    "tasa_asistencia",
+    "completacion_tareas",
+    "puntuacion_participacion",
+    "promedio_calificaciones",
+    "actividades_extracurriculares",
+    "involucramiento_parental_codificado"
+  ],
+  "feature_importance": {
+    "tasa_asistencia": 0.057796940740034414,
+    "completacion_tareas": 0.3577689044509239,
+    "puntuacion_participacion": 0.07309175349252611,
+    "promedio_calificaciones": 0.358102936476257,
+    "actividades_extracurriculares": 0.01091477231048505,
+    "involucramiento_parental_codificado": 0.14232469252977353
+  },
+  "classes": {
+    "0": "Faible",
+    "1": "Moyen",
+    "2": "Élevé"
+  },
+  "model_type": "RandomForestClassifier",
+  "model_parameters": {
+    "bootstrap": true,
+    "ccp_alpha": 0.0,
+    "class_weight": "balanced",
+    "criterion": "gini",
+    "max_depth": 10,
+    "max_features": "sqrt",
+    "max_leaf_nodes": null,
+    "max_samples": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_leaf": 1,
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "monotonic_cst": null,
+    "n_estimators": 200,
+    "n_jobs": null,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "dataset_info": {
+    "n_features": 6,
+    "classes_count": 3
+  },
+  "performance_metrics": {
+    "accuracy": 0.9833333333333333,
+    "cross_validation": null
+  }
+}

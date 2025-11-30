@@ -1,0 +1,26 @@
+{
+  "feedback_id": "feedback_20251130_082644_874979",
+  "timestamp": "2025-11-30T08:26:44.875019",
+  "student_data": {
+    "tasa_asistencia": 75,
+    "completacion_tareas": 60,
+    "puntuacion_participacion": 4.0,
+    "promedio_calificaciones": 9.5,
+    "actividades_extracurriculares": 0,
+    "involucramiento_parental": "Faible"
+  },
+  "original_prediction": {
+    "predicted_risk": "Élevé",
+    "confidence": 85.5,
+    "risk_probabilities": {
+      "Faible": 0.1,
+      "Moyen": 0.2,
+      "Élevé": 0.7
+    }
+  },
+  "user_correction": "Moyen",
+  "user_rating": 4,
+  "user_notes": "El estudiante ha mostrado mejoría reciente",
+  "used_for_training": false,
+  "processed": false
+}
