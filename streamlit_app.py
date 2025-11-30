@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Sistema Inteligente de Recomendación Educativa Avanzado v2.0
-Encoding: UTF-8
-Última actualización: 2024-11-30
-"""
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -596,7 +589,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Sidebar para navegación
+# Sidebar para navegación - ACTUALIZADO: Menos pestañas
 with st.sidebar:
     st.header("🧭 Panel de Navegación Avanzado")
     
@@ -606,8 +599,7 @@ with st.sidebar:
             "🏠 Dashboard Principal",
             "📊 Analytics Educativos", 
             "🔍 Análisis Individual Avanzado",
-            "🎯 Recomendaciones Contextuales",
-            "📈 Visualizaciones Avanzadas",
+            "📈 Dashboard Avanzado",  # Pestaña unificada
             "💬 Sistema de Feedback",
             "ℹ️ Acerca del Sistema"
         ],
@@ -1248,182 +1240,245 @@ elif page == "🔍 Análisis Individual Avanzado":
                 st.error(f"Error durante el análisis: {str(e)}")
                 st.info("💡 **Solución:** Intenta con diferentes valores o verifica la configuración del sistema.")
 
-# Página 4: Recomendaciones Contextuales (CORREGIDA)
-elif page == "🎯 Recomendaciones Contextuales":
-    st.header("🎯 Recomendaciones Contextuales Avanzadas")
+# Página 4: Dashboard Avanzado (UNIFICADA)
+elif page == "📈 Dashboard Avanzado":
+    st.header("📈 Dashboard Avanzado - Recomendaciones y Visualizaciones")
     
-    st.markdown("""
-    ### 🎯 **Recomendaciones Contextuales Avanzadas**
+    # Crear pestañas internas para organizar el contenido
+    tab1, tab2, tab3 = st.tabs(["🎯 Recomendaciones Contextuales", "📊 Visualizaciones Avanzadas", "🚀 Acciones Rápidas"])
+    
+    with tab1:
+        st.subheader("🎯 Sistema de Recomendaciones Contextuales Avanzadas")
+        
+        st.markdown("""
+        ### 🤖 **IA Contextual para Educación Personalizada**
+        
+        Nuestro sistema analiza múltiples dimensiones para generar recomendaciones inteligentes:
+        
+        🔍 **Factores Contextuales Analizados:**
+        - **Periodo Académico**: Estrategias adaptadas al momento del año escolar
+        - **Recursos Disponibles**: Optimización según infraestructura institucional  
+        - **Políticas Educativas**: Cumplimiento de normativas y protocolos
+        - **Capacidad Docente**: Asignación inteligente de recursos humanos
+        - **Contexto Socioeconómico**: Adaptación a realidades estudiantiles
+        
+        📊 **Metodología Avanzada:**
+        1. **Análisis Predictivo**: Identificación de patrones de riesgo temprano
+        2. **Optimización Contextual**: Adaptación basada en recursos disponibles
+        3. **Priorización Inteligente**: Enfoque en máximo impacto demostrado
+        4. **Evaluación Continua**: Medición y ajuste de efectividad
+        
+        🎯 **Tipos de Recomendaciones Generadas:**
+        - Intervenciones académicas personalizadas
+        - Estrategias de apoyo emocional y motivacional
+        - Planes de mejora de asistencia y participación
+        - Programas de involucramiento parental
+        """)
+        
+        # Ejemplo de recomendaciones contextuales
+        with st.expander("📋 Ejemplos de Recomendaciones Contextuales", expanded=True):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **🎓 Para Estudiantes con Baja Asistencia:**
+                - Sistema de alertas tempranas a padres
+                - Tutorías de recuperación personalizadas
+                - Análisis de causas fundamentales
+                - Plan de mejora con hitos específicos
+                """)
+                
+                st.markdown("""
+                **📚 Para Bajo Rendimiento Académico:**
+                - Evaluación de estilos de aprendizaje
+                - Adaptación de metodologías de enseñanza
+                - Refuerzo en áreas específicas de conocimiento
+                - Programa de mentoría entre pares
+                """)
+            
+            with col2:
+                st.markdown("""
+                **😟 Para Problemas de Participación:**
+                - Estrategias de gamificación en clase
+                - Actividades colaborativas estructuradas
+                - Sistema de reconocimiento de logros
+                - Desarrollo de habilidades sociales
+                """)
+                
+                st.markdown("""
+                **🏫 Para Contextos Institucionales:**
+                - Optimización de recursos docentes
+                - Programas de desarrollo profesional
+                - Estrategias de comunicación con familias
+                - Planificación curricular contextualizada
+                """)
+    
+    with tab2:
+        st.subheader("📊 Visualizaciones Avanzadas y Analytics")
+        
+        st.markdown("""
+        ### 📈 **Dashboard de Analytics Predictivos**
+        
+        **Visualizaciones Interactivas Disponibles:**
+        
+        ✅ **Mapa de Riesgo Académico**
+           - Distribución geográfica de estudiantes en riesgo
+           - Heatmaps de factores críticos por zona
+           - Identificación de clusters de intervención
+        
+        ✅ **Tendencias Temporales Avanzadas**
+           - Evolución de indicadores clave por periodo académico
+           - Proyecciones predictivas semestrales con intervalos de confianza
+           - Análisis de estacionalidad y patrones cíclicos
+        
+        ✅ **Análisis Comparativo Inteligente**
+           - Benchmarking entre grupos, secciones y niveles
+           - Identificación de mejores prácticas institucionales
+           - Análisis de brechas de rendimiento
+        
+        ✅ **Dashboard Ejecutivo Integral**
+           - Métricas de impacto de intervenciones implementadas
+           - ROI de estrategias educativas
+           - Indicadores de eficiencia institucional
+        """)
+        
+        # Visualizaciones interactivas
+        st.markdown("---")
+        st.subheader("🔄 Visualizaciones en Tiempo Real")
+        
+        if df is not None:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Gráfico de distribución de riesgo
+                if 'nivel_riesgo' in df.columns:
+                    risk_distribution = df['nivel_riesgo'].value_counts()
+                    fig_risk = px.pie(
+                        values=risk_distribution.values,
+                        names=risk_distribution.index,
+                        title="Distribución Actual de Riesgo Académico",
+                        color_discrete_sequence=['#2ecc71', '#f39c12', '#e74c3c']
+                    )
+                    st.plotly_chart(fig_risk, use_container_width=True)
+            
+            with col2:
+                # Gráfico de correlación entre asistencia y rendimiento
+                if all(col in df.columns for col in ['tasa_asistencia', 'promedio_calificaciones']):
+                    fig_scatter = px.scatter(
+                        df,
+                        x='tasa_asistencia',
+                        y='promedio_calificaciones',
+                        title="Relación Asistencia vs Rendimiento",
+                        trendline="lowess",
+                        color_discrete_sequence=['#3498db']
+                    )
+                    st.plotly_chart(fig_scatter, use_container_width=True)
+        
+        # Métricas de visualización
+        st.markdown("---")
+        st.subheader("📊 Métricas de Visualización")
+        
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        
+        with metric_col1:
+            st.metric("Estudiantes Visualizados", f"{len(df) if df is not None else 0}")
+        
+        with metric_col2:
+            if df is not None and 'nivel_riesgo' in df.columns:
+                high_risk = len(df[df['nivel_riesgo'] == 'Alto']) if 'Alto' in df['nivel_riesgo'].values else 0
+                st.metric("Casos Críticos", high_risk)
+            else:
+                st.metric("Casos Críticos", "N/A")
+        
+        with metric_col3:
+            if df is not None and 'tasa_asistencia' in df.columns:
+                avg_attendance = df['tasa_asistencia'].mean()
+                st.metric("Asistencia Promedio", f"{avg_attendance:.1f}%")
+            else:
+                st.metric("Asistencia Promedio", "N/A")
+        
+        with metric_col4:
+            if df is not None and 'promedio_calificaciones' in df.columns:
+                avg_grades = df['promedio_calificaciones'].mean()
+                st.metric("Rendimiento Promedio", f"{avg_grades:.1f}/20")
+            else:
+                st.metric("Rendimiento Promedio", "N/A")
+    
+    with tab3:
+        st.subheader("🚀 Acciones Rápidas y Reportes")
+        
+        st.markdown("""
+        ### ⚡ **Acciones Inmediatas Disponibles**
+        
+        Ejecute análisis y generación de reportes con un solo clic:
+        """)
+        
+        # Botones de acción
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("📊 Generar Dashboard Ejecutivo", use_container_width=True, key="adv_dash"):
+                with st.spinner("Generando análisis ejecutivo..."):
+                    st.success("✅ Dashboard generado exitosamente")
+                    mostrar_dashboard_ejecutivo()
+        
+        with col2:
+            if st.button("🎯 Analizar Estudiantes Críticos", use_container_width=True, key="adv_criticos"):
+                with st.spinner("Identificando casos prioritarios..."):
+                    estudiantes_criticos = identificar_estudiantes_criticos()
+                    st.success(f"✅ {len(estudiantes_criticos)} estudiantes identificados")
+                    mostrar_analisis_criticos(estudiantes_criticos)
+        
+        with col3:
+            if st.button("📋 Generar Reporte Institucional", use_container_width=True, key="adv_reporte"):
+                with st.spinner("Compilando métricas institucionales..."):
+                    reporte = generar_reporte_institucional()
+                    st.success("✅ Reporte institucional generado")
+                    descargar_reporte(reporte)
+        
+        # Métricas en tiempo real
+        st.markdown("---")
+        st.subheader("📈 Métricas del Sistema en Tiempo Real")
+        
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        
+        with metric_col1:
+            st.metric(
+                label="Estudiantes Analizados", 
+                value=f"{obtener_total_estudiantes():,}",
+                delta="+12% vs mes anterior"
+            )
+        
+        with metric_col2:
+            st.metric(
+                label="Precisión del Modelo", 
+                value=f"{obtener_precision_modelo():.1f}%",
+                delta="+2.3%"
+            )
+        
+        with metric_col3:
+            st.metric(
+                label="Intervenciones Activas", 
+                value=f"{obtener_intervenciones_activas()}",
+                delta="+5 esta semana"
+            )
+        
+        with metric_col4:
+            st.metric(
+                label="Tasa de Mejora", 
+                value=f"{obtener_tasa_mejora():.1f}%",
+                delta="+1.8%"
+            )
+        
+        # Información adicional
+        st.markdown("---")
+        st.info("""
+        **💡 Pro Tip:** Utilice las pestañas superiores para navegar entre recomendaciones contextuales, 
+        visualizaciones avanzadas y acciones rápidas. Cada sección está diseñada para proporcionar 
+        insights específicos y herramientas de acción inmediata.
+        """)
 
-    Nuestro sistema analiza múltiples dimensiones para generar recomendaciones personalizadas:
-
-    🔍 **Factores Contextuales Considerados:**
-    - **Periodo Académico**: Estrategias adaptadas al momento del año
-    - **Recursos Disponibles**: Optimización según infraestructura institucional  
-    - **Políticas Educativas**: Cumplimiento de normativas y protocolos
-    - **Capacidad Docente**: Asignación inteligente de recursos humanos
-
-    📊 **Metodología:**
-    1. Análisis de patrones históricos en contextos similares
-    2. Adaptación basada en recursos institucionales disponibles
-    3. Priorización según impacto potencial demostrado
-    4. Evaluación continua de efectividad
-
-    🚀 **Próximamente**: Sistema de recomendaciones adaptativas en tiempo real
-    """)
-
-    # Botones interactivos
-    st.markdown("---")
-    st.subheader("🚀 Acciones Inmediatas Disponibles")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("📊 Generar Dashboard Ejecutivo", use_container_width=True, key="ctx_dash"):
-            with st.spinner("Generando análisis ejecutivo..."):
-                st.success("✅ Dashboard generado exitosamente")
-                mostrar_dashboard_ejecutivo()
-
-    with col2:
-        if st.button("🎯 Analizar Estudiantes Críticos", use_container_width=True, key="ctx_criticos"):
-            with st.spinner("Identificando casos prioritarios..."):
-                estudiantes_criticos = identificar_estudiantes_criticos()
-                st.success(f"✅ {len(estudiantes_criticos)} estudiantes identificados")
-                mostrar_analisis_criticos(estudiantes_criticos)
-
-    with col3:
-        if st.button("📋 Generar Reporte Institucional", use_container_width=True, key="ctx_reporte"):
-            with st.spinner("Compilando métricas institucionales..."):
-                reporte = generar_reporte_institucional()
-                st.success("✅ Reporte institucional generado")
-                descargar_reporte(reporte)
-
-    # Métricas en tiempo real
-    st.markdown("---")
-    st.subheader("📈 Métricas del Sistema en Tiempo Real")
-
-    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-
-    with metric_col1:
-        st.metric(
-            label="Estudiantes Analizados", 
-            value=f"{obtener_total_estudiantes():,}",
-            delta="+12% vs mes anterior"
-        )
-
-    with metric_col2:
-        st.metric(
-            label="Precisión del Modelo", 
-            value=f"{obtener_precision_modelo():.1f}%",
-            delta="+2.3%"
-        )
-
-    with metric_col3:
-        st.metric(
-            label="Intervenciones Activas", 
-            value=f"{obtener_intervenciones_activas()}",
-            delta="+5 esta semana"
-        )
-
-    with metric_col4:
-        st.metric(
-            label="Tasa de Mejora", 
-            value=f"{obtener_tasa_mejora():.1f}%",
-            delta="+1.8%"
-        )
-
-# Página 5: Visualizaciones Avanzadas (CORREGIDA)
-elif page == "📈 Visualizaciones Avanzadas":
-    st.header("📈 Dashboard de Analytics Predictivos")
-
-    st.markdown("""
-    ### 📈 **Dashboard de Analytics Predictivos**
-
-    **Visualizaciones Interactivas Disponibles:**
-
-    ✅ **Mapa de Riesgo Académico**
-       - Distribución geográfica de estudiantes en riesgo
-       - Heatmaps de factores críticos por zona
-
-    ✅ **Tendencias Temporales**
-       - Evolución de indicadores clave por periodo
-       - Proyecciones predictivas semestrales
-
-    ✅ **Análisis Comparativo**
-       - Benchmarking entre grupos y secciones
-       - Identificación de mejores prácticas
-
-    ✅ **Dashboard Ejecutivo**
-       - Métricas de impacto de intervenciones
-       - ROI de estrategias implementadas
-
-    🔧 **En Desarrollo:**
-    - Análisis de redes de influencia académica
-    - Simulaciones de escenarios de intervención
-    - Panel de control en tiempo real
-    """)
-
-    # Botones interactivos
-    st.markdown("---")
-    st.subheader("🚀 Acciones Inmediatas Disponibles")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("📊 Generar Dashboard Ejecutivo", use_container_width=True, key="viz_dash"):
-            with st.spinner("Generando análisis ejecutivo..."):
-                st.success("✅ Dashboard generado exitosamente")
-                mostrar_dashboard_ejecutivo()
-
-    with col2:
-        if st.button("🎯 Analizar Estudiantes Críticos", use_container_width=True, key="viz_criticos"):
-            with st.spinner("Identificando casos prioritarios..."):
-                estudiantes_criticos = identificar_estudiantes_criticos()
-                st.success(f"✅ {len(estudiantes_criticos)} estudiantes identificados")
-                mostrar_analisis_criticos(estudiantes_criticos)
-
-    with col3:
-        if st.button("📋 Generar Reporte Institucional", use_container_width=True, key="viz_reporte"):
-            with st.spinner("Compilando métricas institucionales..."):
-                reporte = generar_reporte_institucional()
-                st.success("✅ Reporte institucional generado")
-                descargar_reporte(reporte)
-
-    # Métricas en tiempo real
-    st.markdown("---")
-    st.subheader("📈 Métricas del Sistema en Tiempo Real")
-
-    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-
-    with metric_col1:
-        st.metric(
-            label="Estudiantes Analizados", 
-            value=f"{obtener_total_estudiantes():,}",
-            delta="+12% vs mes anterior"
-        )
-
-    with metric_col2:
-        st.metric(
-            label="Precisión del Modelo", 
-            value=f"{obtener_precision_modelo():.1f}%",
-            delta="+2.3%"
-        )
-
-    with metric_col3:
-        st.metric(
-            label="Intervenciones Activas", 
-            value=f"{obtener_intervenciones_activas()}",
-            delta="+5 esta semana"
-        )
-
-    with metric_col4:
-        st.metric(
-            label="Tasa de Mejora", 
-            value=f"{obtener_tasa_mejora():.1f}%",
-            delta="+1.8%"
-        )
-
-# Página 6: Sistema de Feedback
+# Página 5: Sistema de Feedback
 elif page == "💬 Sistema de Feedback":
     st.header("💬 Analytics de Feedback")
     
@@ -1490,7 +1545,7 @@ elif page == "💬 Sistema de Feedback":
     except Exception as e:
         st.error(f"Error cargando analytics de feedback: {e}")
 
-# Página 7: Acerca del Sistema
+# Página 6: Acerca del Sistema
 elif page == "ℹ️ Acerca del Sistema":
     st.header("ℹ️ Acerca del Sistema Avanzado")
     
