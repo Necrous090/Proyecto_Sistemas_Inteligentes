@@ -114,8 +114,8 @@ class ContinuousLearningSystem:
                 
                 # Solo procesar si hay corrección del usuario y es válida
                 if user_correction and user_correction in le_risk.classes_:
-                    # Mapear engagement parental
-                    engagement_mapping = {'Faible': 0, 'Moyenne': 1, 'Élevée': 2}
+                    # Mapear engagement parental - CORREGIDO A ESPAÑOL
+                    engagement_mapping = {'Bajo': 0, 'Medio': 1, 'Alto': 2}
                     
                     training_example = {
                         'tasa_asistencia': float(student_data['tasa_asistencia']),
@@ -459,20 +459,20 @@ if __name__ == "__main__":
         'puntuacion_participacion': 4.0,
         'promedio_calificaciones': 9.5,
         'actividades_extracurriculares': 0,
-        'involucramiento_parental': 'Faible'
+        'involucramiento_parental': 'Bajo'  # CORREGIDO
     }
     
     sample_prediction = {
-        'predicted_risk': 'Élevé',
+        'predicted_risk': 'Alto',  # CORREGIDO
         'confidence': 85.5,
-        'risk_probabilities': {'Faible': 0.1, 'Moyen': 0.2, 'Élevé': 0.7}
+        'risk_probabilities': {'Bajo': 0.1, 'Medio': 0.2, 'Alto': 0.7}  # CORREGIDO
     }
     
     # Guardar feedback
     feedback_id = save_user_feedback(
         sample_student, 
         sample_prediction, 
-        user_correction='Moyen',
+        user_correction='Medio',  # CORREGIDO
         user_notes="El estudiante ha mostrado mejoría reciente",
         user_rating=4
     )
