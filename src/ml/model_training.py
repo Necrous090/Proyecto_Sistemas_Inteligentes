@@ -101,7 +101,7 @@ class AdvancedModelTrainer:
                     'cv_std': cv_scores.std()
                 }
                 
-                logger.info(f"✅ {name} - Accuracy: {accuracy:.4f}, CV: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
+                logger.info(f"✅ {name} - Precisión: {accuracy:.4f}, CV: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
                 
             except Exception as e:
                 logger.error(f"❌ Error evaluando modelo {name}: {e}")
@@ -225,7 +225,7 @@ class ModelTrainer:
                 'probabilities': y_pred_proba
             }
             
-            logger.info(f"✅ Evaluación completada - Accuracy: {accuracy:.4f}")
+            logger.info(f"✅ Evaluación completada - Precisión: {accuracy:.4f}")
             return evaluation
             
         except Exception as e:
@@ -255,7 +255,7 @@ def train_risk_prediction_model(X, y, **kwargs) -> Tuple[RandomForestClassifier,
         # Reporte de clasificación en formato string para logging
         report_str = classification_report(y_test, evaluation['predictions'])
         
-        logger.info(f"🎯 Modelo entrenado - Accuracy: {accuracy:.4f}")
+        logger.info(f"🎯 Modelo entrenado - Precisión: {accuracy:.4f}")
         logger.info(f"📊 Reporte de clasificación:\n{report_str}")
         
         return model, accuracy, evaluation
@@ -303,7 +303,7 @@ def train_advanced_risk_model(X, y, test_size: float = 0.2, compare_models: bool
             accuracy = accuracy_score(y_test, model.predict(X_test))
             evaluation = {'accuracy': accuracy}
         
-        logger.info(f"🎯 Modelo entrenado - Accuracy: {accuracy:.4f}")
+        logger.info(f"🎯 Modelo entrenado - Precisión: {accuracy:.4f}")
         return model, accuracy, evaluation
         
     except Exception as e:
@@ -477,8 +477,8 @@ def load_latest_model(model_dir='models') -> Optional[Any]:
         model = model_data['model']
         metadata = model_data.get('metadata', {})
         
-        logger.info(f"✅ Modelo cargado - Accuracy: {metadata.get('accuracy', 'N/A')}")
-        logger.info(f"📊 Modelo info - Features: {len(metadata.get('features', []))}")
+        logger.info(f"✅ Modelo cargado - Precisión: {metadata.get('accuracy', 'N/A')}")
+        logger.info(f"📊 Modelo info - Características: {len(metadata.get('features', []))}")
         
         return model_data
         
@@ -584,15 +584,15 @@ if __name__ == "__main__":
             metadata_path = save_result['metadata_path']
             
             print(f"📁 Modelo guardado en: {model_path}")
-            print(f"📊 Accuracy del modelo: {accuracy:.4f}")
+            print(f"📊 Precisión del modelo: {accuracy:.4f}")
             
             # Probar carga del modelo
             loaded_model_data = load_latest_model()
             if loaded_model_data:
                 model_info = get_model_info(loaded_model_data)
                 print(f"🔍 Información del modelo cargado:")
-                print(f"   - Accuracy: {model_info['accuracy']}")
-                print(f"   - Features: {model_info['features_count']}")
+                print(f"   - Precisión: {model_info['accuracy']}")
+                print(f"   - Características: {model_info['features_count']}")
                 print(f"   - Tipo: {model_info['model_type']}")
         else:
             print("❌ Error en el preprocesamiento de datos")
