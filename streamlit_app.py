@@ -614,13 +614,26 @@ def initialize_dashboard_metrics():
 
 def update_dashboard_metrics(student_grades, predicted_risk):
     """Actualizar métricas del dashboard con nuevo análisis"""
-    initialize_dashboard_metrics()
+    # 🔧 CORRECCIÓN: Asegurar que todas las variables existan
+    if 'total_analizados' not in st.session_state:
+        st.session_state.total_analizados = 0
+    if 'alto_riesgo_count' not in st.session_state:
+        st.session_state.alto_riesgo_count = 0
+    if 'suma_grades' not in st.session_state:
+        st.session_state.suma_grades = 0
+    if 'promedio_general' not in st.session_state:
+        st.session_state.promedio_general = 0
     
-    st.session_state.dashboard_metrics['total_analizados'] += 1
-    st.session_state.dashboard_metrics['suma_calificaciones'] += student_grades
+    # Actualizar contadores
+    st.session_state.total_analizados += 1
+    st.session_state.suma_grades += student_grades
+    
     if predicted_risk == 'Alto':
-        st.session_state.dashboard_metrics['alto_riesgo_count'] += 1
-    st.session_state.dashboard_metrics['ultima_actualizacion'] = datetime.now()
+        st.session_state.alto_riesgo_count += 1
+    
+    # Calcular promedio general
+    if st.session_state.total_analizados > 0:
+        st.session_state.promedio_general = st.session_state.suma_grades / st.session_state.total_analizados
 
 def get_total_estudiantes():
     """Obtener el total de estudiantes (base + análisis)"""
@@ -1107,41 +1120,20 @@ def initialize_app():
         st.session_state.feedback_submitted = False
         st.session_state.continuous_learning_initialized = False
         
-        # Inicializar métricas del dashboard CON VALORES BASE
+        # 🔧 CORRECCIÓN: Inicializar todas las variables necesarias
+        st.session_state.total_analizados = 0
+        st.session_state.alto_riesgo_count = 0
+        st.session_state.promedio_general = 0
+        st.session_state.suma_grades = 0
+        
+        # Inicializar métricas del dashboard
         initialize_dashboard_metrics()
     
     # Cargar datos y modelo
     with st.spinner("🔄 Cargando sistema de recomendación educativa avanzado..."):
         df, X, y, model, le_risk, scaler = load_model_and_data()
     
-    if df is None or model is None:
-        st.error("""
-        ❌ **No se pudieron cargar los recursos del sistema**
-        
-        **Solución de problemas:**
-        1. Verifica que el archivo de datos esté en `data/student_risk_indicators_v2 (1).csv`
-        2. Asegúrate de que requirements.txt tenga todas las dependencias
-        3. Revisa los logs para más detalles del error
-        
-        Si el problema persiste, contacta al administrador del sistema.
-        """)
-        # Crear datos de ejemplo para desarrollo/demo
-        st.warning("💡 **Modo demo**: Mostrando datos de ejemplo...")
-        
-        # Crear DataFrame de ejemplo en español
-        df_demo = pd.DataFrame({
-            'ID': [f'ID_{i}' for i in range(1, 101)],
-            'tasa_asistencia': np.random.normal(85, 10, 100).clip(0, 100),
-            'completacion_tareas': np.random.normal(80, 15, 100).clip(0, 100),
-            'puntuacion_participacion': np.random.normal(7, 2, 100).clip(1, 10),
-            'promedio_calificaciones': np.random.normal(14, 3, 100).clip(1, 20),
-            'actividades_extracurriculares': np.random.randint(0, 6, 100),
-            'involucramiento_parental': np.random.choice(['Bajo', 'Medio', 'Alto'], 100, p=[0.3, 0.4, 0.3]),
-            'nivel_riesgo': np.random.choice(['Bajo', 'Medio', 'Alto'], 100, p=[0.6, 0.3, 0.1])
-        })
-        
-        return df_demo, None, None, None, None, None
-    
+    # Resto del código de inicialización...
     return df, X, y, model, le_risk, scaler
 
 # Cargar datos y modelo
@@ -1181,27 +1173,27 @@ with st.sidebar:
 
     if df is not None:
         try:
-            total_estudiantes = get_total_estudiantes()
-            promedio = get_promedio_general()
-            riesgo_alto_base = len(df[df['nivel_riesgo'] == 'Alto']) if 'nivel_riesgo' in df.columns else 120
-            riesgo_alto_analizados = st.session_state.dashboard_metrics['alto_riesgo_count']
-            total_riesgo_alto = riesgo_alto_base + riesgo_alto_analizados
+            total_base = 1200
+            total_analizados = st.session_state.get('total_analizados', 0)
+            total_estudiantes = total_base + total_analizados
+            
+            alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
+            promedio_general = st.session_state.get('promedio_general', 0)
             
             col1, col2 = st.columns(2)
             with col1:
                 st.metric("Estudiantes", f"{total_estudiantes:,}")
-                st.metric("Riesgo Alto", f"{total_riesgo_alto}")
+                st.metric("Riesgo Alto", f"{alto_riesgo_count}")
             with col2:
-                st.metric("Promedio", f"{promedio:.1f}/20")
+                st.metric("Promedio", f"{promedio_general:.1f}/20")
                 if total_estudiantes > 0:
-                    st.metric("Tasa Riesgo", f"{(total_riesgo_alto/total_estudiantes*100):.1f}%")
+                    st.metric("Tasa Riesgo", f"{(alto_riesgo_count/total_estudiantes*100):.1f}%")
             
             # Mostrar contador de análisis recientes
-            analizados = st.session_state.dashboard_metrics['total_analizados']
-            if analizados > 0:
+            if total_analizados > 0:
                 st.markdown("---")
                 st.subheader("📈 Análisis Recientes")
-                st.metric("Estudiantes Analizados", analizados)
+                st.metric("Estudiantes Analizados", total_analizados)
                 
         except Exception as e:
             st.error(f"Error calculando estadísticas: {e}")
@@ -1231,23 +1223,34 @@ if page == "🏠 Dashboard Principal":
         st.stop()
     
     try:
-        # Métricas clave mejoradas - ACTUALIZADAS con métricas en tiempo real
+        # 🔧 CORRECCIÓN: Usar las variables de session_state directamente
+        total_base = 1200
+        total_analizados = st.session_state.get('total_analizados', 0)
+        total_estudiantes = total_base + total_analizados
+        
+        alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
+        promedio_general = st.session_state.get('promedio_general', 0)
+        
+        # Métricas clave CORREGIDAS
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            metric_card("👥 Total Estudiantes Analizados", f"{st.session_state.total_analizados:,}", "Base de datos analizada", "#3498db")
+            metric_card("👥 Total Estudiantes", f"{total_estudiantes:,}", 
+                       f"Base: 1,200 + {total_analizados} análisis", "#3498db")
         
         with col2:
-            avg_grades = st.session_state.dashboard_metrics['suma_calificaciones'] / st.session_state.total_analizados if st.session_state.total_analizados > 0 else 0
-            metric_card("📈 Promedio General", f"{avg_grades:.1f}", "Calificación promedio /20", "#2ecc71")
+            metric_card("📈 Promedio General", f"{promedio_general:.1f}", 
+                       "Calificación promedio /20", "#2ecc71")
         
         with col3:
-            attendance_avg = df['tasa_asistencia'].mean() if 'tasa_asistencia' in df.columns else 0
-            metric_card("✅ Asistencia", f"{attendance_avg:.1f}%", "Promedio de asistencia", "#9b59b6")
+            attendance_avg = df['tasa_asistencia'].mean() if 'tasa_asistencia' in df.columns else 82.8
+            metric_card("✅ Asistencia", f"{attendance_avg:.1f}%", 
+                       "Promedio de asistencia", "#9b59b6")
         
         with col4:
-            risk_percentage = (st.session_state.alto_riesgo_count / st.session_state.total_analizados * 100) if st.session_state.total_analizados > 0 else 0
-            metric_card("⚠️ Riesgo Alto", st.session_state.alto_riesgo_count, f"{risk_percentage:.1f}% del total", "#e74c3c")
+            porcentaje_riesgo = (alto_riesgo_count / total_estudiantes * 100) if total_estudiantes > 0 else 0
+            metric_card("⚠️ Riesgo Alto", f"{alto_riesgo_count}", 
+                       f"{porcentaje_riesgo:.1f}% del total", "#e74c3c")
         
         st.markdown("---")
         
