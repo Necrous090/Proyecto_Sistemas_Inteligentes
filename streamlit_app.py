@@ -165,16 +165,34 @@ st.markdown("""
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         transition: all 0.3s ease;
         background: white;
+        color: #2c3e50;  /* Texto oscuro para mejor contraste */
     }
     .recommendation-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
     
-    .priority-critica { border-left: 8px solid #e74c3c; background: linear-gradient(135deg, #ffebee, #ffcdd2); }
-    .priority-alta { border-left: 8px solid #f39c12; background: linear-gradient(135deg, #fff8e1, #ffecb3); }
-    .priority-media { border-left: 8px solid #3498db; background: linear-gradient(135deg, #e3f2fd, #bbdefb); }
-    .priority-baja { border-left: 8px solid #2ecc71; background: linear-gradient(135deg, #e8f5e8, #c8e6c9); }
+    /* COLORES CORREGIDOS PARA MEJOR CONTRASTE */
+    .priority-critica { 
+        border-left: 8px solid #e74c3c; 
+        background: #ffffff;  /* Fondo blanco sólido */
+        color: #2c3e50;      /* Texto oscuro */
+    }
+    .priority-alta { 
+        border-left: 8px solid #f39c12; 
+        background: #ffffff;  /* Fondo blanco sólido */
+        color: #2c3e50;      /* Texto oscuro */
+    }
+    .priority-media { 
+        border-left: 8px solid #3498db; 
+        background: #ffffff;  /* Fondo blanco sólido */
+        color: #2c3e50;      /* Texto oscuro */
+    }
+    .priority-baja { 
+        border-left: 8px solid #2ecc71; 
+        background: #ffffff;  /* Fondo blanco sólido */
+        color: #2c3e50;      /* Texto oscuro */
+    }
     
     .metric-card {
         background: white;
@@ -188,6 +206,7 @@ st.markdown("""
         display: flex;
         flex-direction: column;
         justify-content: center;
+        color: #2c3e50;  /* Texto oscuro */
     }
     .metric-card:hover {
         transform: translateY(-3px);
@@ -195,21 +214,23 @@ st.markdown("""
     }
     
     .impact-highlight {
-        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        background: #f8f9fa;  /* Gris muy claro sólido */
         padding: 15px;
         border-radius: 10px;
         margin: 12px 0;
         border-left: 5px solid #3498db;
         font-size: 0.95em;
+        color: #2c3e50;  /* Texto oscuro */
     }
     
     .justification-section {
-        background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+        background: #ffffff;  /* Fondo blanco sólido */
         padding: 25px;
         border-radius: 15px;
         margin: 20px 0;
         border: 1px solid #e0e0e0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        color: #2c3e50;  /* Texto oscuro */
     }
     
     .alert-banner {
@@ -228,6 +249,13 @@ st.markdown("""
         border-radius: 10px;
         margin: 15px 0;
         border-left: 5px solid #2f9e44;
+    }
+
+    /* Asegurar que todo el texto sea legible */
+    .recommendation-card h4,
+    .recommendation-card p,
+    .recommendation-card strong {
+        color: #2c3e50 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1610,3 +1638,4 @@ st.markdown("""
     Última actualización: """ + datetime.now().strftime("%Y-%m-%d %H:%M") + """</small>
 </div>
 """, unsafe_allow_html=True)
+
