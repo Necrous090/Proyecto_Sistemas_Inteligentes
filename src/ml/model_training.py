@@ -598,3 +598,117 @@ if __name__ == "__main__":
             print("❌ Error en el preprocesamiento de datos")
     else:
         print("❌ No se pudieron cargar los datos")
+
+# 🔧 Añadir estas funciones al final de tu model_training.py existente
+
+def get_model_compatibility_info(model_data: Dict) -> Dict[str, Any]:
+    """
+    Obtiene información de compatibilidad del modelo para el sistema de feedback
+    """
+    if model_data is None:
+        return {'error': 'Modelo no cargado', 'compatible': False}
+    
+    try:
+        model = model_data.get('model')
+        metadata = model_data.get('metadata', {})
+        le_risk = model_data.get('label_encoder')
+        scaler = model_data.get('scaler')
+        
+        compatibility_info = {
+            'compatible': True,
+            'model_type': type(model).__name__ if model else 'Unknown',
+            'has_label_encoder': le_risk is not None,
+            'has_scaler': scaler is not None,
+            'features': metadata.get('features', []),
+            'classes': list(le_risk.classes_) if le_risk else [],
+            'feature_count': len(metadata.get('features', [])),
+            'model_trained': hasattr(model, 'feature_importances_') if model else False
+        }
+        
+        # Verificar características críticas para feedback
+        required_features = [
+            'tasa_asistencia', 'completacion_tareas', 'puntuacion_participacion',
+            'promedio_calificaciones', 'actividades_extracurriculares', 'involucramiento_parental_codificado'
+        ]
+        
+        available_features = metadata.get('features', [])
+        missing_features = [f for f in required_features if f not in available_features]
+        
+        if missing_features:
+            compatibility_info['compatible'] = False
+            compatibility_info['missing_features'] = missing_features
+            compatibility_info['warning'] = f'Faltan características: {missing_features}'
+        
+        return compatibility_info
+        
+    except Exception as e:
+        return {'error': str(e), 'compatible': False}
+
+def validate_feedback_compatibility(model_data: Dict, student_data: Dict) -> Tuple[bool, str]:
+    """
+    Valida que los datos de estudiante sean compatibles con el modelo para feedback
+    """
+    try:
+        if model_data is None:
+            return False, "Modelo no disponible"
+        
+        metadata = model_data.get('metadata', {})
+        model_features = set(metadata.get('features', []))
+        
+        # Mapear características de entrada a características del modelo
+        input_mapping = {
+            'tasa_asistencia': 'tasa_asistencia',
+            'completacion_tareas': 'completacion_tareas', 
+            'puntuacion_participacion': 'puntuacion_participacion',
+            'promedio_calificaciones': 'promedio_calificaciones',
+            'actividades_extracurriculares': 'actividades_extracurriculares',
+            'involucramiento_parental': 'involucramiento_parental_codificado'
+        }
+        
+        # Verificar que tenemos todas las características requeridas
+        required_inputs = set(input_mapping.keys())
+        available_inputs = set(student_data.keys())
+        missing_inputs = required_inputs - available_inputs
+        
+        if missing_inputs:
+            return False, f"Faltan datos de entrada: {list(missing_inputs)}"
+        
+        # Verificar que las características mapeadas estén en el modelo
+        mapped_features = set(input_mapping.values())
+        missing_model_features = mapped_features - model_features
+        
+        if missing_model_features:
+            return False, f"El modelo no tiene características esperadas: {list(missing_model_features)}"
+        
+        return True, "Compatible"
+        
+    except Exception as e:
+        return False, f"Error en validación: {str(e)}"
+
+def prepare_student_for_feedback(student_data: Dict, feature_names: List[str]) -> Dict:
+    """
+    Prepara datos de estudiante para el sistema de feedback
+    """
+    try:
+        # Mapear engagement parental a formato numérico
+        engagement_mapping = {
+            'Bajo': 0, 'Medio': 1, 'Alto': 2,
+            'Faible': 0, 'Moyenne': 1, 'Élevée': 2
+        }
+        
+        prepared_data = {
+            'tasa_asistencia': float(student_data['tasa_asistencia']),
+            'completacion_tareas': float(student_data['completacion_tareas']),
+            'puntuacion_participacion': float(student_data['puntuacion_participacion']),
+            'promedio_calificaciones': float(student_data['promedio_calificaciones']),
+            'actividades_extracurriculares': int(student_data['actividades_extracurriculares']),
+            'involucramiento_parental_codificado': engagement_mapping.get(
+                student_data['involucramiento_parental'], 1  # Default to 'Medio'
+            )
+        }
+        
+        return prepared_data
+        
+    except Exception as e:
+        logger.error(f"Error preparando datos para feedback: {e}")
+        raise
