@@ -1196,64 +1196,6 @@ def calculate_efficiency_score(df: pd.DataFrame) -> float:
     except:
         return 0.0
 
-def generate_strategic_insights(df: pd.DataFrame) -> List[Dict]:
-    """Genera insights estratégicos automáticos"""
-    insights = []
-    
-    if df is None or df.empty:
-        return insights
-    
-    try:
-        # Análisis de asistencia
-        attendance_avg = df['tasa_asistencia'].mean() if 'tasa_asistencia' in df.columns else 0
-        if attendance_avg < 80:
-            insights.append({
-                'type': 'warning',
-                'title': 'Asistencia Baja',
-                'description': f'La asistencia promedio es del {attendance_avg:.1f}%, por debajo del objetivo del 80%',
-                'recommendation': 'Implementar programa de seguimiento de asistencia y notificaciones a padres'
-            })
-        
-        # Análisis de rendimiento
-        grades_avg = df['promedio_calificaciones'].mean() if 'promedio_calificaciones' in df.columns else 0
-        if grades_avg < 12:
-            insights.append({
-                'type': 'warning',
-                'title': 'Rendimiento Académico Bajo',
-                'description': f'El promedio general es de {grades_avg:.1f}/20, por debajo del estándar de 12/20',
-                'recommendation': 'Establecer tutorías de refuerzo y revisar metodologías de enseñanza'
-            })
-        
-        # Análisis de riesgo - Compatibilidad con español y francés
-        high_risk_rate = 0
-        if 'nivel_riesgo' in df.columns:
-            if 'Alto' in df['nivel_riesgo'].values:
-                high_risk_rate = (df['nivel_riesgo'] == 'Alto').mean() * 100
-            elif 'Élevé' in df['nivel_riesgo'].values:
-                high_risk_rate = (df['nivel_riesgo'] == 'Élevé').mean() * 100
-                
-        if high_risk_rate > 20:
-            insights.append({
-                'type': 'warning',
-                'title': 'Alta Tasa de Riesgo',
-                'description': f'El {high_risk_rate:.1f}% de estudiantes están en riesgo alto',
-                'recommendation': 'Activar protocolos de intervención temprana y asignar tutores personales'
-            })
-        
-        # Insights positivos
-        if attendance_avg > 90 and grades_avg > 15:
-            insights.append({
-                'type': 'success',
-                'title': 'Excelente Desempeño General',
-                'description': 'La institución muestra indicadores excepcionales en asistencia y rendimiento',
-                'recommendation': 'Mantener estrategias actuales y considerar programas de enriquecimiento'
-            })
-        
-    except Exception as e:
-        logger.error(f"Error generando insights: {e}")
-    
-    return insights
-
 # Inicialización de la aplicación
 def initialize_app():
     """Inicializa la aplicación con manejo de estado mejorado"""
@@ -1655,8 +1597,8 @@ elif page == "Analytics Educativos":
         st.stop()
     
     try:
-        # Pestañas para diferentes tipos de analytics
-        tab1, tab2, tab3, tab4 = st.tabs(["Métricas Clave", "Tendencias", "Intervenciones", "Insights"])
+        # Pestañas para diferentes tipos de analytics - SOLO 3 AHORA
+        tab1, tab2, tab3 = st.tabs(["Métricas Clave", "Tendencias", "Intervenciones"])
         
         with tab1:
             st.subheader("Métricas de Rendimiento Clave")
@@ -1732,6 +1674,47 @@ elif page == "Analytics Educativos":
                 st.plotly_chart(fig_trend, use_container_width=True)
             else:
                 st.info("No hay suficientes datos para mostrar tendencias temporales")
+                
+            # Mostrar también tendencias del dataset demo
+            st.subheader("Tendencias del Dataset de Ejemplo")
+            
+            # Datos de ejemplo para tendencias
+            dates = pd.date_range(start='2024-01-01', periods=12, freq='M')
+            trend_data = pd.DataFrame({
+                'date': dates,
+                'avg_grades': np.random.normal(14, 1, 12),
+                'attendance_rate': np.random.normal(85, 3, 12),
+                'high_risk_students': np.random.randint(50, 150, 12)
+            })
+            
+            fig_trend = go.Figure()
+            fig_trend.add_trace(go.Scatter(
+                x=trend_data['date'],
+                y=trend_data['avg_grades'],
+                name='Promedio Calificaciones',
+                line=dict(color='#3498db', width=3)
+            ))
+            fig_trend.add_trace(go.Scatter(
+                x=trend_data['date'],
+                y=trend_data['attendance_rate'],
+                name='Tasa Asistencia',
+                line=dict(color='#2ecc71', width=3),
+                yaxis='y2'
+            ))
+            
+            fig_trend.update_layout(
+                title="Evolución de Métricas Clave (Ejemplo)",
+                xaxis_title="Fecha",
+                yaxis_title="Calificación Promedio",
+                yaxis2=dict(
+                    title="Tasa Asistencia (%)",
+                    overlaying='y',
+                    side='right'
+                ),
+                height=400
+            )
+            
+            st.plotly_chart(fig_trend, use_container_width=True)
         
         with tab3:
             st.subheader("Analytics de Intervenciones")
@@ -1775,30 +1758,27 @@ elif page == "Analytics Educativos":
                     size_max=40
                 )
                 st.plotly_chart(fig_scatter, use_container_width=True)
-        
-        with tab4:
-            st.subheader("Insights y Recomendaciones Estratégicas")
             
-            # Generar insights automáticos
-            insights = generate_strategic_insights(df)
+            # Análisis adicional de intervenciones
+            st.subheader("Efectividad de Intervenciones por Tipo de Riesgo")
             
-            for insight in insights:
-                if insight['type'] == 'warning':
-                    st.markdown(f"""
-                    <div class="alert-banner">
-                        <strong>{insight['title']}</strong>
-                        <p>{insight['description']}</p>
-                        <em>Recomendación: {insight['recommendation']}</em>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div class="success-banner">
-                        <strong>{insight['title']}</strong>
-                        <p>{insight['description']}</p>
-                        <em>Acción: {insight['recommendation']}</em>
-                    </div>
-                    """, unsafe_allow_html=True)
+            # Datos de ejemplo
+            riesgo_data = pd.DataFrame({
+                'tipo_riesgo': ['Bajo', 'Medio', 'Alto'],
+                'tutorias_personalizadas': [92, 78, 65],
+                'seguimiento_asistencia': [85, 82, 70],
+                'apoyo_tareas': [88, 75, 62],
+                'involucramiento_parental': [90, 80, 68]
+            })
+            
+            fig_riesgo = px.bar(
+                riesgo_data,
+                x='tipo_riesgo',
+                y=['tutorias_personalizadas', 'seguimiento_asistencia', 'apoyo_tareas', 'involucramiento_parental'],
+                title="Efectividad de Intervenciones por Nivel de Riesgo",
+                barmode='group'
+            )
+            st.plotly_chart(fig_riesgo, use_container_width=True)
                 
     except Exception as e:
         st.error(f"Error en analytics: {str(e)}")
@@ -1867,7 +1847,7 @@ elif page == "Análisis Individual Avanzado":
                 
                 # Generar recomendaciones
                 with st.spinner("Analizando datos con IA avanzada..."):
-                    # Obtener una muestra de X (si es un array NumPy)
+                    # Obtener una muestra de X (maneja tanto DataFrames como arrays NumPy)
                     if X is not None:
                         if hasattr(X, 'head'):  # Si es DataFrame
                             X_sample = X.head(100)
@@ -1877,7 +1857,7 @@ elif page == "Análisis Individual Avanzado":
                         X_sample = None
                     
                     results = generate_recommendations(student_input, model, le_risk, scaler, X_sample)
-
+                
                 # GUARDAR ESTUDIANTE EN ALMACENAMIENTO PERSISTENTE
                 guardado_exitoso = guardar_estudiante_analizado(student_input, results['predicted_risk'])
                 
