@@ -1,3 +1,5 @@
+[file name]: streamlit_app.py
+[file content begin]
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -271,70 +273,6 @@ def generate_recommendations(student_input, model, le_risk, scaler, X_sample):
             'feature_importance': [],
             'justification': 'Análisis completado con lógica educativa.'
         }
-    """Generar recomendaciones personalizadas - versión demo"""
-    # Predecir riesgo
-    risk_levels = ['Bajo', 'Medio', 'Alto']
-    predicted_risk = np.random.choice(risk_levels, p=[0.6, 0.3, 0.1])
-    confidence = np.random.uniform(0.7, 0.95)
-    
-    # Probabilidades de riesgo
-    risk_probs = {level: np.random.random() for level in risk_levels}
-    total = sum(risk_probs.values())
-    risk_probabilities = {k: v/total for k, v in risk_probs.items()}
-    
-    # Recomendaciones basadas en el riesgo
-    recommendations = []
-    
-    if predicted_risk == 'Alto':
-        recommendations = [
-            {
-                'area': 'Asistencia',
-                'action': 'Implementar plan de mejora de asistencia con seguimiento diario',
-                'priority': 'CRÍTICA',
-                'expected_impact': 'Alto',
-                'required_resources': ['Tutor asignado', 'Comunicación con padres', 'Seguimiento docente'],
-                'estimated_timeline': '2-4 semanas'
-            },
-            {
-                'area': 'Rendimiento Académico', 
-                'action': 'Tutorías intensivas en áreas críticas',
-                'priority': 'ALTA',
-                'expected_impact': 'Alto',
-                'required_resources': ['Tutor especializado', 'Material de apoyo', 'Evaluaciones frecuentes'],
-                'estimated_timeline': '4-6 semanas'
-            }
-        ]
-    elif predicted_risk == 'Medio':
-        recommendations = [
-            {
-                'area': 'Participación',
-                'action': 'Incrementar participación en clase mediante actividades interactivas',
-                'priority': 'MEDIA',
-                'expected_impact': 'Medio',
-                'required_resources': ['Material didáctico', 'Estrategias de engagement'],
-                'estimated_timeline': '3-5 semanas'
-            }
-        ]
-    else:
-        recommendations = [
-            {
-                'area': 'Desarrollo',
-                'action': 'Programas de enriquecimiento y desarrollo de talentos',
-                'priority': 'BAJA', 
-                'expected_impact': 'Medio',
-                'required_resources': ['Actividades extracurriculares', 'Recursos avanzados'],
-                'estimated_timeline': 'Ongoing'
-            }
-        ]
-    
-    return {
-        'predicted_risk': predicted_risk,
-        'confidence': confidence,
-        'risk_probabilities': risk_probabilities,
-        'recommendations': recommendations,
-        'feature_importance': [{'feature': 'Asistencia', 'importance': 0.8}, 
-                             {'feature': 'Rendimiento', 'importance': 0.6}]
-    }
 
 def generate_proactive_alerts(student_input, df):
     """Generar alertas proactivas - versión demo"""
@@ -639,6 +577,7 @@ def update_dashboard_metrics(student_grades, predicted_risk):
     # Calcular promedio general
     if st.session_state.total_analizados > 0:
         st.session_state.promedio_general = st.session_state.suma_grades / st.session_state.total_analizados
+
 def get_total_estudiantes():
     """Obtener el total de estudiantes (base + análisis)"""
     initialize_dashboard_metrics()
@@ -674,7 +613,7 @@ def get_promedio_general():
 
 # Configuración de la página
 st.set_page_config(
-    page_title="🎓 Sistema Inteligente de Recomendación Educativa - Avanzado",
+    page_title="Sistema Inteligente de Recomendación Educativa - Avanzado",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -976,7 +915,7 @@ def generate_strategic_insights(df: pd.DataFrame) -> List[Dict]:
 # FUNCIONES AUXILIARES NUEVAS
 def mostrar_dashboard_ejecutivo():
     """Muestra el dashboard ejecutivo interactivo"""
-    st.subheader("📊 Dashboard Ejecutivo - Resumen Institucional")
+    st.subheader("Dashboard Ejecutivo - Resumen Institucional")
     
     # Datos de ejemplo - reemplazar con datos reales
     datos_ejemplo = {
@@ -1008,7 +947,7 @@ def identificar_estudiantes_criticos():
 
 def mostrar_analisis_criticos(estudiantes):
     """Muestra análisis de estudiantes críticos"""
-    st.subheader("🎯 Estudiantes que Requieren Intervención Inmediata")
+    st.subheader("Estudiantes que Requieren Intervención Inmediata")
     
     for i, estudiante in enumerate(estudiantes, 1):
         with st.expander(f"#{i} - {estudiante['nombre']} (Riesgo: {estudiante['riesgo']})"):
@@ -1025,7 +964,7 @@ def generar_reporte_institucional():
     """Genera reporte institucional descargable con datos ACTUALIZADOS"""
     # Obtener métricas actuales de los análisis
     total_analizados = st.session_state.get('total_analizados', 0)
-    alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)  # ✅ Correcto
+    alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
     promedio_general = st.session_state.get('promedio_general', 0)
     suma_grades = st.session_state.get('suma_grades', 0)
     
@@ -1039,13 +978,12 @@ def generar_reporte_institucional():
         tasa_riesgo_analizados = 0
         eficacia_actual = 73.8
     
-    # 🔧 CORRECCIÓN: Cambiar "alta_riesgo_count" por "alto_riesgo_count"
     # Determinar tendencia basada en los análisis recientes
     if total_analizados == 0:
         tendencia = "Sin datos recientes"
-    elif alto_riesgo_count == 0:  # ✅ CORREGIDO: "alta_riesgo_count" -> "alto_riesgo_count"
+    elif alto_riesgo_count == 0:
         tendencia = "Excelente - Sin casos de alto riesgo"
-    elif (alto_riesgo_count / total_analizados) < 0.1:  # ✅ CORREGIDO: "alta_riesgo_count" -> "alto_riesgo_count"
+    elif (alto_riesgo_count / total_analizados) < 0.1:
         tendencia = "Mejorando"
     else:
         tendencia = "Requiere atención"
@@ -1054,7 +992,7 @@ def generar_reporte_institucional():
     recomendaciones = []
     
     if total_analizados > 0:
-        if alto_riesgo_count > 0:  # ✅ Ya está correcto aquí
+        if alto_riesgo_count > 0:
             recomendaciones.append(f"Intervención prioritaria para {alto_riesgo_count} estudiantes en riesgo alto")
         
         if promedio_general < 12:
@@ -1103,7 +1041,7 @@ def descargar_reporte(reporte):
     """Permite descargar el reporte generado"""
     reporte_str = json.dumps(reporte, indent=2, ensure_ascii=False)
     st.download_button(
-        label="📥 Descargar Reporte Completo",
+        label="Descargar Reporte Completo",
         data=reporte_str,
         file_name=f"reporte_institucional_{datetime.now().strftime('%Y%m%d')}.json",
         mime="application/json"
@@ -1127,14 +1065,14 @@ def obtener_tasa_mejora():
 def load_model_and_data():
     """Carga datos y modelo con manejo robusto de errores"""
     try:
-        logger.info("🔄 Iniciando carga de datos y modelo...")
+        logger.info("Iniciando carga de datos y modelo...")
         
         # Cargar datos
         df = load_student_data()
         if df is None or df.empty:
-            logger.error("❌ No se pudieron cargar los datos o el DataFrame está vacío")
+            logger.error("No se pudieron cargar los datos o el DataFrame está vacío")
             st.error("""
-            ❌ **Error: No se pudieron cargar los datos del estudiante**
+            Error: No se pudieron cargar los datos del estudiante
             
             Por favor verifica que:
             - El archivo CSV esté en `data/student_risk_indicators_v2 (1).csv`
@@ -1143,33 +1081,33 @@ def load_model_and_data():
             """)
             return None, None, None, None, None, None
         
-        logger.info(f"✅ Datos cargados: {len(df)} registros")
+        logger.info(f"Datos cargados: {len(df)} registros")
         
         # Preprocesar datos
         X, y, le_risk, scaler = preprocess_student_data(df)
         if any(item is None for item in [X, y, le_risk, scaler]):
-            logger.error("❌ Error en el preprocesamiento de datos")
+            logger.error("Error en el preprocesamiento de datos")
             return None, None, None, None, None, None
         
-        logger.info("✅ Datos preprocesados correctamente")
+        logger.info("Datos preprocesados correctamente")
         
         # Cargar modelo
         model_data = load_latest_model()
         if model_data is None:
-            logger.warning("⚠️ No se encontró modelo guardado. Entrenando nuevo modelo...")
+            logger.warning("No se encontró modelo guardado. Entrenando nuevo modelo...")
             model, accuracy, _ = train_advanced_risk_model(X, y)
             if model is None:
-                logger.error("❌ Error entrenando el modelo")
+                logger.error("Error entrenando el modelo")
                 return None, None, None, None, None, None
-            logger.info(f"✅ Nuevo modelo entrenado con accuracy: {accuracy:.4f}")
+            logger.info(f"Nuevo modelo entrenado con accuracy: {accuracy:.4f}")
         else:
             model = model_data['model']
-            logger.info("✅ Modelo existente cargado correctamente")
+            logger.info("Modelo existente cargado correctamente")
         
         return df, X, y, model, le_risk, scaler
     
     except Exception as e:
-        logger.error(f"❌ Error crítico en load_model_and_data: {e}")
+        logger.error(f"Error crítico en load_model_and_data: {e}")
         st.error(f"Error crítico al cargar datos: {str(e)}")
         return None, None, None, None, None, None
 
@@ -1184,7 +1122,7 @@ def initialize_app():
         st.session_state.feedback_submitted = False
         st.session_state.continuous_learning_initialized = False
         
-        # 🔧 CORRECCIÓN: Inicializar todas las variables necesarias
+        # Inicializar todas las variables necesarias
         st.session_state.total_analizados = 0
         st.session_state.alto_riesgo_count = 0
         st.session_state.promedio_general = 0
@@ -1194,10 +1132,9 @@ def initialize_app():
         initialize_dashboard_metrics()
     
     # Cargar datos y modelo
-    with st.spinner("🔄 Cargando sistema de recomendación educativa avanzado..."):
+    with st.spinner("Cargando sistema de recomendación educativa avanzado..."):
         df, X, y, model, le_risk, scaler = load_model_and_data()
     
-    # Resto del código de inicialización...
     return df, X, y, model, le_risk, scaler
 
 # Cargar datos y modelo
@@ -1206,25 +1143,22 @@ df, X, y, model, le_risk, scaler = initialize_app()
 # Título principal mejorado
 st.markdown("""
 <div class="main-header">
-    <h1 style="margin: 0; font-size: 2.5rem;">🎓 Sistema Inteligente de Recomendación Educativa - Avanzado</h1>
+    <h1 style="margin: 0; font-size: 2.5rem;">Sistema Inteligente de Recomendación Educativa - Avanzado</h1>
     <p style="margin: 10px 0 0 0; font-size: 1.2rem;"><strong>Analytics Predictivos + Aprendizaje Continuo + Recomendaciones Contextuales</strong></p>
     <p style="margin: 5px 0 0 0; font-size: 1rem;"><em>Plataforma integral para la mejora del rendimiento académico con IA explicativa</em></p>
 </div>
 """, unsafe_allow_html=True)
 
-# Sidebar para navegación - ACTUALIZADO: Menos pestañas
+# Sidebar para navegación - SIMPLIFICADO
 with st.sidebar:
-    st.header("🧭 Panel de Navegación Avanzado")
+    st.header("Panel de Navegación Avanzado")
     
     page = st.radio(
         "Seleccionar módulo:",
         [
-            "🏠 Dashboard Principal",
-            "📊 Analytics Educativos", 
-            "🔍 Análisis Individual Avanzado",
-            "📈 Dashboard Avanzado",
-            "💬 Sistema de Feedback",
-            "ℹ️ Acerca del Sistema"
+            "Dashboard Principal",
+            "Analytics Educativos", 
+            "Análisis Individual Avanzado"
         ],
         index=0
     )
@@ -1232,8 +1166,7 @@ with st.sidebar:
     st.markdown("---")
     
     # Estadísticas rápidas
-    st.markdown("---")
-    st.subheader("📊 Estadísticas Rápidas")
+    st.subheader("Estadísticas Rápidas")
 
     if df is not None:
         try:
@@ -1256,7 +1189,7 @@ with st.sidebar:
             # Mostrar contador de análisis recientes
             if total_analizados > 0:
                 st.markdown("---")
-                st.subheader("📈 Análisis Recientes")
+                st.subheader("Análisis Recientes")
                 st.metric("Estudiantes Analizados", total_analizados)
                 
         except Exception as e:
@@ -1264,7 +1197,7 @@ with st.sidebar:
     
     # Información del sistema
     st.markdown("---")
-    st.subheader("⚙️ Estado del Sistema")
+    st.subheader("Estado del Sistema")
     
     try:
         model_data = load_latest_model()
@@ -1279,15 +1212,15 @@ with st.sidebar:
         st.warning("No se pudo cargar información del sistema")
 
 # Página 1: Dashboard Principal
-if page == "🏠 Dashboard Principal":
-    st.header("📊 Dashboard de Monitoreo Educativo Avanzado")
+if page == "Dashboard Principal":
+    st.header("Dashboard de Monitoreo Educativo Avanzado")
     
     if df is None:
         st.error("No hay datos disponibles")
         st.stop()
     
     try:
-        # 🔧 CORRECCIÓN: Usar las variables de session_state directamente
+        # Usar las variables de session_state directamente
         total_base = 1200
         total_analizados = st.session_state.get('total_analizados', 0)
         total_estudiantes = total_base + total_analizados
@@ -1295,31 +1228,31 @@ if page == "🏠 Dashboard Principal":
         alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
         promedio_general = st.session_state.get('promedio_general', 0)
         
-        # Métricas clave CORREGIDAS
+        # Métricas clave
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            metric_card("👥 Total Estudiantes", f"{total_estudiantes:,}", 
+            metric_card("Total Estudiantes", f"{total_estudiantes:,}", 
                        f"Base: 1,200 + {total_analizados} análisis", "#3498db")
         
         with col2:
-            metric_card("📈 Promedio General", f"{promedio_general:.1f}", 
+            metric_card("Promedio General", f"{promedio_general:.1f}", 
                        "Calificación promedio /20", "#2ecc71")
         
         with col3:
             attendance_avg = df['tasa_asistencia'].mean() if 'tasa_asistencia' in df.columns else 82.8
-            metric_card("✅ Asistencia", f"{attendance_avg:.1f}%", 
+            metric_card("Asistencia", f"{attendance_avg:.1f}%", 
                        "Promedio de asistencia", "#9b59b6")
         
         with col4:
             porcentaje_riesgo = (alto_riesgo_count / total_estudiantes * 100) if total_estudiantes > 0 else 0
-            metric_card("⚠️ Riesgo Alto", f"{alto_riesgo_count}", 
+            metric_card("Riesgo Alto", f"{alto_riesgo_count}", 
                        f"{porcentaje_riesgo:.1f}% del total", "#e74c3c")
         
         st.markdown("---")
         
         # Análisis de calidad de datos
-        with st.expander("🔍 Análisis de Calidad de Datos", expanded=False):
+        with st.expander("Análisis de Calidad de Datos", expanded=False):
             try:
                 quality_report = analyze_data_quality(df)
                 
@@ -1364,7 +1297,7 @@ if page == "🏠 Dashboard Principal":
         
         with col1:
             if 'nivel_riesgo' in df.columns:
-                st.subheader("🎯 Distribución de Niveles de Riesgo")
+                st.subheader("Distribución de Niveles de Riesgo")
                 risk_counts = df['nivel_riesgo'].value_counts()
                 
                 # Mapear nombres para mejor visualización
@@ -1392,7 +1325,7 @@ if page == "🏠 Dashboard Principal":
                 st.info("No hay datos de niveles de riesgo disponibles")
         
         with col2:
-            st.subheader("📈 Correlación de Indicadores Clave")
+            st.subheader("Correlación de Indicadores Clave")
             numeric_cols = ['tasa_asistencia', 'completacion_tareas', 'puntuacion_participacion', 'promedio_calificaciones']
             available_cols = [col for col in numeric_cols if col in df.columns]
             
@@ -1413,55 +1346,163 @@ if page == "🏠 Dashboard Principal":
             else:
                 st.info("No hay suficientes datos numéricos para la matriz de correlación")
         
-        # Análisis adicional
+        # =============================================
+        # SECCIONES DEL DASHBOARD AVANZADO INCORPORADAS
+        # =============================================
+        
+        # Visualizaciones Avanzadas
         st.markdown("---")
-        st.subheader("📋 Análisis Detallado por Indicador")
+        st.subheader("Visualizaciones Avanzadas y Analytics")
         
-        indicators = ['tasa_asistencia', 'completacion_tareas', 'promedio_calificaciones']
-        selected_indicator = st.selectbox("Seleccionar indicador para análisis:", indicators)
+        # Visualizaciones interactivas
+        st.markdown("---")
+        st.subheader("Visualizaciones en Tiempo Real")
         
-        if selected_indicator in df.columns:
+        if df is not None:
             col1, col2 = st.columns(2)
             
             with col1:
-                fig_hist = px.histogram(
-                    df, 
-                    x=selected_indicator,
-                    title=f"Distribución de {selected_indicator.replace('_', ' ').title()}",
-                    color_discrete_sequence=['#3498db']
-                )
-                st.plotly_chart(fig_hist, use_container_width=True)
+                # Gráfico de distribución de riesgo
+                if 'nivel_riesgo' in df.columns:
+                    risk_distribution = df['nivel_riesgo'].value_counts()
+                    fig_risk = px.pie(
+                        values=risk_distribution.values,
+                        names=risk_distribution.index,
+                        title="Distribución Actual de Riesgo Académico",
+                        color_discrete_sequence=['#2ecc71', '#f39c12', '#e74c3c']
+                    )
+                    st.plotly_chart(fig_risk, use_container_width=True)
             
             with col2:
-                # Box plot por nivel de riesgo
-                if 'nivel_riesgo' in df.columns:
-                    # Mapear nombres para mejor visualización
-                    df_display = df.copy()
-                    df_display['nivel_riesgo_display'] = df_display['nivel_riesgo'].map({
-                        'Bajo': 'Bajo', 'Medio': 'Medio', 'Alto': 'Alto',
-                        'Faible': 'Bajo', 'Moyen': 'Medio', 'Élevé': 'Alto'
-                    })
-                    
-                    fig_box = px.box(
-                        df_display,
-                        x='nivel_riesgo_display',
-                        y=selected_indicator,
-                        title=f"{selected_indicator.replace('_', ' ').title()} por Nivel de Riesgo",
-                        color='nivel_riesgo_display',
-                        color_discrete_map={
-                            'Bajo': '#2ecc71',
-                            'Medio': '#f39c12',
-                            'Alto': '#e74c3c'
-                        }
+                # Gráfico de correlación entre asistencia y rendimiento
+                if all(col in df.columns for col in ['tasa_asistencia', 'promedio_calificaciones']):
+                    fig_scatter = px.scatter(
+                        df,
+                        x='tasa_asistencia',
+                        y='promedio_calificaciones',
+                        title="Relación Asistencia vs Rendimiento",
+                        trendline="lowess",
+                        color_discrete_sequence=['#3498db']
                     )
-                    st.plotly_chart(fig_box, use_container_width=True)
+                    st.plotly_chart(fig_scatter, use_container_width=True)
+        
+        # Métricas de visualización
+        st.markdown("---")
+        st.subheader("Métricas de Visualización")
+        
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        
+        with metric_col1:
+            st.metric("Estudiantes Visualizados", f"{len(df) if df is not None else 0}")
+        
+        with metric_col2:
+            if df is not None and 'nivel_riesgo' in df.columns:
+                high_risk = len(df[df['nivel_riesgo'] == 'Alto']) if 'Alto' in df['nivel_riesgo'].values else 0
+                st.metric("Casos Críticos", high_risk)
+            else:
+                st.metric("Casos Críticos", "N/A")
+        
+        with metric_col3:
+            if df is not None and 'tasa_asistencia' in df.columns:
+                avg_attendance = df['tasa_asistencia'].mean()
+                st.metric("Asistencia Promedio", f"{avg_attendance:.1f}%")
+            else:
+                st.metric("Asistencia Promedio", "N/A")
+        
+        with metric_col4:
+            if df is not None and 'promedio_calificaciones' in df.columns:
+                avg_grades = df['promedio_calificaciones'].mean()
+                st.metric("Rendimiento Promedio", f"{avg_grades:.1f}/20")
+            else:
+                st.metric("Rendimiento Promedio", "N/A")
+        
+        # Acciones Rápidas
+        st.markdown("---")
+        st.subheader("Acciones Rápidas y Reportes")
+        
+        st.markdown("""
+        ### Acciones Inmediatas Disponibles
+        
+        Ejecute análisis y generación de reportes con un solo clic:
+        """)
+        
+        # Botones de acción
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("Generar Dashboard Ejecutivo", use_container_width=True, key="adv_dash"):
+                with st.spinner("Generando análisis ejecutivo..."):
+                    st.success("Dashboard generado exitosamente")
+                    mostrar_dashboard_ejecutivo()
+        
+        with col2:
+            if st.button("Analizar Estudiantes Críticos", use_container_width=True, key="adv_criticos"):
+                with st.spinner("Identificando casos prioritarios..."):
+                    estudiantes_criticos = identificar_estudiantes_criticos()
+                    st.success(f"{len(estudiantes_criticos)} estudiantes identificados")
+                    mostrar_analisis_criticos(estudiantes_criticos)
+        
+        with col3:
+            if st.button("Generar Reporte Institucional", use_container_width=True, key="adv_reporte"):
+                with st.spinner("Compilando métricas institucionales ACTUALIZADAS..."):
+                    reporte = generar_reporte_institucional()
+                    st.success("Reporte institucional ACTUALIZADO generado")
+                    
+                    # Mostrar resumen del reporte
+                    st.subheader("Resumen del Reporte Actualizado")
+                    
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric("Análisis Recientes", reporte['resumen_analisis']['total_analizados_recientemente'])
+                        st.metric("Estudiantes Total", reporte['metricas_principales']['total_estudiantes_institucion'])
+                    
+                    with col2:
+                        st.metric("Riesgo Alto", f"{reporte['metricas_principales']['tasa_riesgo_alto_analizados']}")
+                        st.metric("Tendencia", reporte['metricas_principales']['tendencia_general'])
+                    
+                    # Botón de descarga
+                    descargar_reporte(reporte)
+        
+        # Métricas en tiempo real
+        st.markdown("---")
+        st.subheader("Métricas del Sistema en Tiempo Real")
+        
+        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+        
+        with metric_col1:
+            st.metric(
+                label="Estudiantes Analizados", 
+                value=f"{obtener_total_estudiantes():,}",
+                delta="+12% vs mes anterior"
+            )
+        
+        with metric_col2:
+            st.metric(
+                label="Precisión del Modelo", 
+                value=f"{obtener_precision_modelo():.1f}%",
+                delta="+2.3%"
+            )
+        
+        with metric_col3:
+            st.metric(
+                label="Intervenciones Activas", 
+                value=f"{obtener_intervenciones_activas()}",
+                delta="+5 esta semana"
+            )
+        
+        with metric_col4:
+            st.metric(
+                label="Tasa de Mejora", 
+                value=f"{obtener_tasa_mejora():.1f}%",
+                delta="+1.8%"
+            )
                 
     except Exception as e:
         st.error(f"Error en el dashboard: {str(e)}")
 
 # Página 2: Analytics Educativos
-elif page == "📊 Analytics Educativos":
-    st.header("📈 Analytics Educativos Avanzados")
+elif page == "Analytics Educativos":
+    st.header("Analytics Educativos Avanzados")
     
     if df is None:
         st.error("No hay datos disponibles para análisis")
@@ -1469,7 +1510,7 @@ elif page == "📊 Analytics Educativos":
     
     try:
         # Pestañas para diferentes tipos de analytics
-        tab1, tab2, tab3, tab4 = st.tabs(["📊 Métricas Clave", "📈 Tendencias", "🎯 Intervenciones", "🔍 Insights"])
+        tab1, tab2, tab3, tab4 = st.tabs(["Métricas Clave", "Tendencias", "Intervenciones", "Insights"])
         
         with tab1:
             st.subheader("Métricas de Rendimiento Clave")
@@ -1528,7 +1569,7 @@ elif page == "📊 Analytics Educativos":
         
         with tab2:
             st.subheader("Análisis de Tendencias Temporales")
-            st.info("🔮 Esta funcionalidad requiere datos temporales. En una implementación completa, aquí se mostrarían tendencias a lo largo del tiempo.")
+            st.info("Esta funcionalidad requiere datos temporales. En una implementación completa, aquí se mostrarían tendencias a lo largo del tiempo.")
             
             # Datos de ejemplo para tendencias
             dates = pd.date_range(start='2024-01-01', periods=12, freq='M')
@@ -1621,7 +1662,7 @@ elif page == "📊 Analytics Educativos":
                 if insight['type'] == 'warning':
                     st.markdown(f"""
                     <div class="alert-banner">
-                        <strong>⚠️ {insight['title']}</strong>
+                        <strong>{insight['title']}</strong>
                         <p>{insight['description']}</p>
                         <em>Recomendación: {insight['recommendation']}</em>
                     </div>
@@ -1629,7 +1670,7 @@ elif page == "📊 Analytics Educativos":
                 else:
                     st.markdown(f"""
                     <div class="success-banner">
-                        <strong>✅ {insight['title']}</strong>
+                        <strong>{insight['title']}</strong>
                         <p>{insight['description']}</p>
                         <em>Acción: {insight['recommendation']}</em>
                     </div>
@@ -1639,8 +1680,8 @@ elif page == "📊 Analytics Educativos":
         st.error(f"Error en analytics: {str(e)}")
 
 # Página 3: Análisis Individual Avanzado
-elif page == "🔍 Análisis Individual Avanzado":
-    st.header("🔍 Análisis Individual Avanzado de Estudiante")
+elif page == "Análisis Individual Avanzado":
+    st.header("Análisis Individual Avanzado de Estudiante")
     
     st.info("""
     **Complete el formulario para analizar el perfil de un estudiante y recibir recomendaciones personalizadas.**
@@ -1657,12 +1698,12 @@ elif page == "🔍 Análisis Individual Avanzado":
     
     # Formulario para datos del estudiante
     with st.form("advanced_student_analysis"):
-        st.subheader("📝 Perfil del Estudiante")
+        st.subheader("Perfil del Estudiante")
         
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("#### 📊 Indicadores Académicos")
+            st.markdown("#### Indicadores Académicos")
             attendance = st.slider("**Tasa de Asistencia** (%)", 0, 100, 85,
                                  help="Porcentaje de clases asistidas en el último mes")
             homework = st.slider("**Completación de Tareas** (%)", 0, 100, 80,
@@ -1671,7 +1712,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                                     help="Nivel de participación activa en clase")
         
         with col2:
-            st.markdown("#### 🎯 Rendimiento y Contexto")
+            st.markdown("#### Rendimiento y Contexto")
             grades = st.slider("**Calificación Promedio** (1-20)", 1.0, 20.0, 14.0, 0.1,
                              help="Promedio general de calificaciones")
             extracurricular = st.slider("**Actividades Extracurriculares**", 0, 5, 2,
@@ -1680,7 +1721,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                                   ['Bajo', 'Medio', 'Alto'], index=1,
                                   help="Nivel de involucramiento y apoyo de los padres")
         
-        submitted = st.form_submit_button("🎯 Analizar Estudiante Avanzado", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Analizar Estudiante Avanzado", type="primary", use_container_width=True)
     
     # Manejar el análisis y guardar en session_state
     if submitted:
@@ -1699,7 +1740,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                 }
                 
                 # Generar recomendaciones
-                with st.spinner("🧠 Analizando datos con IA avanzada..."):
+                with st.spinner("Analizando datos con IA avanzada..."):
                     X_sample = X.head(100) if X is not None else None
                     results = generate_recommendations(student_input, model, le_risk, scaler, X_sample)
                 
@@ -1712,7 +1753,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                 st.session_state.analysis_completed = True
                 st.session_state.feedback_submitted = False
                 
-                st.success("✅ Análisis completado exitosamente!")
+                st.success("Análisis completado exitosamente!")
                 
             except Exception as e:
                 st.error(f"Error durante el análisis: {str(e)}")
@@ -1723,9 +1764,9 @@ elif page == "🔍 Análisis Individual Avanzado":
         student_input = st.session_state.get('student_input')
         
         if results and student_input:
-            # Mostrar resultados principales (mantener tu código existente)
+            # Mostrar resultados principales
             st.markdown("---")
-            st.subheader("🎯 Resultados del Análisis Predictivo Avanzado")
+            st.subheader("Resultados del Análisis Predictivo Avanzado")
             
             col1, col2, col3 = st.columns([1, 1, 1])
             
@@ -1742,7 +1783,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                 """, unsafe_allow_html=True)
             
             with col2:
-                st.markdown("**📊 Probabilidades por Nivel:**")
+                st.markdown("**Probabilidades por Nivel:**")
                 for level, prob in results['risk_probabilities'].items():
                     color = get_risk_color(level)
                     prob_percent = prob * 100
@@ -1750,7 +1791,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                     st.progress(float(prob), text=f"{prob_percent:.1f}%")
             
             with col3:
-                st.markdown("**📈 Características Clave:**")
+                st.markdown("**Características Clave:**")
                 feature_importance = results.get('feature_importance', [])
                 if feature_importance:
                     top_features = sorted(feature_importance, key=lambda x: x['importance'], reverse=True)[:3]
@@ -1759,7 +1800,7 @@ elif page == "🔍 Análisis Individual Avanzado":
             
             # Mostrar recomendaciones
             st.markdown("---")
-            st.subheader("📋 Recomendaciones Personalizadas")
+            st.subheader("Recomendaciones Personalizadas")
             
             if 'recommendations' in results:
                 for i, rec in enumerate(results['recommendations'][:5], 1):
@@ -1767,7 +1808,7 @@ elif page == "🔍 Análisis Individual Avanzado":
                     
                     st.markdown(f"""
                     <div class="recommendation-card {priority_class}">
-                        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">🔹 {rec['area']} <span style="float: right; background: {'#e74c3c' if rec['priority'] == 'CRÍTICA' else '#f39c12' if rec['priority'] == 'ALTA' else '#3498db' if rec['priority'] == 'MEDIA' else '#2ecc71'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">{rec['priority']}</span></h4>
+                        <h4 style="margin: 0 0 10px 0; color: #2c3e50;">{rec['area']} <span style="float: right; background: {'#e74c3c' if rec['priority'] == 'CRÍTICA' else '#f39c12' if rec['priority'] == 'ALTA' else '#3498db' if rec['priority'] == 'MEDIA' else '#2ecc71'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8em;">{rec['priority']}</span></h4>
                         <p style="margin: 8px 0; font-weight: 500;">{rec['action']}</p>
                         <div class="impact-highlight">
                             <strong>Impacto esperado:</strong> {rec['expected_impact']}
@@ -1779,9 +1820,9 @@ elif page == "🔍 Análisis Individual Avanzado":
             else:
                 st.info("No se pudieron generar recomendaciones específicas")
             
-            # 🔧 CORRECCIÓN: Sección de feedback MEJORADA
+            # Sección de feedback
             st.markdown("---")
-            st.subheader("💬 Feedback y Mejora del Sistema")
+            st.subheader("Feedback y Mejora del Sistema")
             
             col1, col2 = st.columns(2)
             
@@ -1801,10 +1842,10 @@ elif page == "🔍 Análisis Individual Avanzado":
                                     placeholder="¿Alguna observación sobre las recomendaciones?",
                                     key="feedback_notes")
             
-            # 🔧 NUEVO: Botón de feedback con PROCESAMIENTO AUTOMÁTICO
-            if st.button("📤 Enviar Feedback", type="secondary", key="feedback_button"):
+            # Botón de feedback
+            if st.button("Enviar Feedback", type="secondary", key="feedback_button"):
                 if not user_correction or user_correction == '':
-                    st.error("❌ Por favor selecciona una corrección del nivel de riesgo")
+                    st.error("Por favor selecciona una corrección del nivel de riesgo")
                 else:
                     try:
                         # Usar los datos guardados en session_state
@@ -1812,9 +1853,9 @@ elif page == "🔍 Análisis Individual Avanzado":
                         current_student_input = st.session_state.student_input
                         
                         if not all([current_results, current_student_input]):
-                            st.error("❌ No hay datos de análisis disponibles para enviar feedback")
+                            st.error("No hay datos de análisis disponibles para enviar feedback")
                         else:
-                            # 🔧 CORRECCIÓN: Enviar feedback
+                            # Enviar feedback
                             feedback_id = save_user_feedback(
                                 current_student_input,
                                 current_results,
@@ -1824,581 +1865,35 @@ elif page == "🔍 Análisis Individual Avanzado":
                             )
                             
                             if feedback_id:
-                                st.success("✅ Feedback enviado exitosamente! ¡Gracias por contribuir al aprendizaje del sistema!")
+                                st.success("Feedback enviado exitosamente! ¡Gracias por contribuir al aprendizaje del sistema!")
                                 st.session_state.feedback_submitted = True
-                                
-                                # 🔄 NUEVO: PROCESAMIENTO AUTOMÁTICO CON APRENDIZAJE CONTINUO
-                                continuous_manager = st.session_state.get('continuous_learning_manager')
-                                if continuous_manager and all([model is not None, le_risk is not None, scaler is not None]):
-                                    try:
-                                        # Verificar y procesar automáticamente
-                                        auto_process_result = continuous_manager.check_and_process_feedback(
-                                            model, le_risk, scaler, batch_threshold=5
-                                        )
-                                        
-                                        if auto_process_result.get('processed', False):
-                                            if auto_process_result.get('model_updated', False):
-                                                st.success(f"🔄 ¡Sistema actualizado automáticamente! Se procesaron {auto_process_result['feedback_processed']} feedbacks")
-                                                st.info(f"📈 Cambio en precisión: {auto_process_result.get('accuracy_change', 0):.4f}")
-                                                
-                                                # Mostrar métricas de aprendizaje CON MANEJO DE ERRORES
-                                                try:
-                                                    learning_analytics = continuous_manager.get_learning_analytics()
-                                                    efficiency = learning_analytics['continuous_learning']['efficiency']
-                                                    
-                                                    st.metric("Eficiencia de Aprendizaje", f"{efficiency.get('utilization_rate', 0):.1f}%")
-                                                    st.metric("Total Feedback Aprendido", continuous_manager.learning_metrics['total_feedback_learned'])
-                                                except Exception as e:
-                                                    logger.error(f"Error mostrando métricas de aprendizaje: {e}")
-                                                    st.metric("Eficiencia de Aprendizaje", "N/A")
-                                                    st.metric("Total Feedback Aprendido", continuous_manager.learning_metrics['total_feedback_learned'])
-                                                
-                                            else:
-                                                st.info(f"ℹ️ {auto_process_result.get('feedback_processed', 0)} feedbacks procesados (esperando más datos para actualizar modelo)")
-                                        else:
-                                            pending = auto_process_result.get('pending_feedback', 0)
-                                            needed = auto_process_result.get('needed_for_batch', 5)
-                                            st.info(f"📝 Feedback guardado. Pendientes: {pending}/5 para próximo procesamiento automático")
-                                            
-                                    except Exception as e:
-                                        logger.error(f"Error en procesamiento automático: {e}")
-                                        st.info("💾 Feedback guardado para procesamiento posterior")
-                                else:
-                                    st.info("💾 Feedback guardado para procesamiento posterior")
-                                    
-                                # 🔧 CORRECCIÓN: Forzar rerun para actualizar la interfaz
                                 st.rerun()
                             else:
-                                st.error("❌ Error al guardar el feedback. Por favor, inténtalo de nuevo.")
+                                st.error("Error al guardar el feedback. Por favor, inténtalo de nuevo.")
                                 
                     except Exception as e:
                         logger.error(f"Error en proceso de feedback: {e}")
-                        st.error("❌ Error inesperado al enviar feedback. Por favor, revisa los logs.")
+                        st.error("Error inesperado al enviar feedback. Por favor, revisa los logs.")
     
-    # 🔧 CORRECCIÓN: Mostrar mensaje si el feedback ya fue enviado
+    # Mostrar mensaje si el feedback ya fue enviado
     elif st.session_state.get('feedback_submitted', False):
-        st.success("🎉 ¡Gracias! Tu feedback ha sido registrado exitosamente.")
-        if st.button("🔄 Realizar nuevo análisis", type="primary"):
+        st.success("¡Gracias! Tu feedback ha sido registrado exitosamente.")
+        if st.button("Realizar nuevo análisis", type="primary"):
             st.session_state.analysis_completed = False
             st.session_state.feedback_submitted = False
             st.session_state.analysis_results = None
             st.session_state.student_input = None
             st.rerun()
 
-# === PÁGINA "💬 Sistema de Feedback" MODIFICADA ===
-elif page == "💬 Sistema de Feedback":
-    st.header("💬 Analytics de Feedback")
-    
-    # Limpiar feedback procesado automáticamente al entrar
-    processed_count = process_feedback_cleanup()
-    if processed_count > 0:
-        st.success(f"✅ Se movieron {processed_count} archivos de feedback a procesados")
-    
-    # MOSTRAR SOLO DOS PESTAÑAS: Analytics y Diagnóstico
-    tab1, tab2 = st.tabs(["📊 Analytics", "🐛 Diagnóstico"])
-    
-    with tab1:
-        st.subheader("📊 Analytics del Sistema")
-        
-        # Generar y mostrar reporte en formato JSON
-        reporte = generate_feedback_report()
-        
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            st.subheader("Reporte Formateado (JSON)")
-            st.json(reporte)
-        
-        with col2:
-            st.subheader("Métricas Rápidas")
-            
-            stats = get_feedback_stats()
-            
-            st.metric(
-                "Feedback Pendiente", 
-                stats.get('pending_feedback', 0)
-            )
-            st.metric(
-                "Feedback Procesado", 
-                stats.get('processed_feedback', 0)
-            )
-            st.metric(
-                "Con Correcciones", 
-                stats.get('with_corrections', 0)
-            )
-            st.metric(
-                "Rating Promedio", 
-                f"{stats.get('performance_metrics', {}).get('average_rating', 0):.1f}/5"
-            )
-        
-        # Visualización de feedback pendiente (interfaz amigable)
-        st.subheader("📝 Feedback Pendiente de Revisión")
-        
-        pending_feedback = get_recent_feedback(limit=20)
-        pending_feedback = [fb for fb in pending_feedback if fb.get('status') == 'pending']
-        
-        if pending_feedback:
-            for i, feedback in enumerate(pending_feedback):
-                with st.expander(f"📋 Feedback {i+1} - {feedback.get('timestamp', '')[:16]}", expanded=False):
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.write("**Datos del Estudiante:**")
-                        student_data = feedback.get('student_data', {})
-                        for key, value in student_data.items():
-                            st.write(f"- {key}: {value}")
-                    
-                    with col2:
-                        st.write("**Predicción Original:**")
-                        original_pred = feedback.get('original_prediction', {})
-                        st.write(f"- Riesgo: {original_pred.get('predicted_risk', 'N/A')}")
-                        st.write(f"- Confianza: {original_pred.get('confidence', 'N/A')}%")
-                        
-                        if feedback.get('user_correction'):
-                            st.write(f"**Corrección Usuario:** {feedback.get('user_correction')}")
-                        
-                        if feedback.get('user_rating'):
-                            st.write(f"**Rating:** {feedback.get('user_rating')}/5")
-                        
-                        if feedback.get('user_notes'):
-                            st.write(f"**Notas:** {feedback.get('user_notes')}")
-                    
-                    # Botones de acción para cada feedback
-                    col1, col2, col3 = st.columns(3)
-                    
-                    with col1:
-                        if st.button(f"📊 Procesar", key=f"process_{i}"):
-                            st.info("Funcionalidad de procesamiento individual en desarrollo")
-                    
-                    with col2:
-                        if st.button(f"👁️ Ver Detalles", key=f"details_{i}"):
-                            st.json(feedback)
-                    
-                    with col3:
-                        if st.button(f"🗑️ Eliminar", key=f"delete_{i}"):
-                            st.warning("Funcionalidad de eliminación en desarrollo")
-        else:
-            st.info("🎉 No hay feedback pendiente de revisión")
-    
-    with tab2:
-        st.subheader("🐛 Diagnóstico del Sistema")
-        
-        if st.button("🔍 Ejecutar Diagnóstico Completo"):
-            with st.spinner("Ejecutando diagnóstico..."):
-                diagnostico = debug_feedback_system()
-            
-            st.subheader("Resultados del Diagnóstico")
-            
-            # Directorios
-            st.write("### 📁 Estado de Directorios")
-            for dir_path, status in diagnostico['directories'].items():
-                icon = "✅" if status['exists'] and status['writable'] else "❌"
-                st.write(f"{icon} {dir_path}: {'Existe y escribible' if status['exists'] and status['writable'] else 'Problema'}")
-            
-            # Conteo de archivos
-            st.write("### 📊 Conteo de Archivos")
-            for status, count in diagnostico['file_counts'].items():
-                st.write(f"- {status}: {count} archivos")
-            
-            # Estado del sistema
-            st.write("### 🔧 Estado del Sistema")
-            if diagnostico['system_status'].get('stats_available', False):
-                st.success("✅ Estadísticas disponibles")
-                stats = diagnostico['system_status']['stats']
-                st.json(stats)
-            else:
-                st.error("❌ No se pudieron obtener estadísticas")
-            
-            # Resultados de pruebas
-            st.write("### 🧪 Pruebas de Funcionalidad")
-            test_result = diagnostico['test_results']['save_test']
-            if test_result['success']:
-                st.success(f"✅ Prueba de guardado exitosa - ID: {test_result['feedback_id']}")
-            else:
-                st.error(f"❌ Prueba de guardado fallida: {test_result.get('error', 'Error desconocido')}")
-            
-# Página 4: Dashboard Avanzado
-elif page == "📈 Dashboard Avanzado":
-    st.header("📈 Dashboard Avanzado - Recomendaciones y Visualizaciones")
-    
-    # Crear pestañas internas para organizar el contenido
-    tab1, tab2, tab3 = st.tabs(["🎯 Recomendaciones Contextuales", "📊 Visualizaciones Avanzadas", "🚀 Acciones Rápidas"])
-    
-    with tab1:
-        st.subheader("🎯 Sistema de Recomendaciones Contextuales Avanzadas")
-        
-        st.markdown("""
-        ### 🤖 **IA Contextual para Educación Personalizada**
-        
-        Nuestro sistema analiza múltiples dimensiones para generar recomendaciones inteligentes:
-        
-        🔍 **Factores Contextuales Analizados:**
-        - **Periodo Académico**: Estrategias adaptadas al momento del año escolar
-        - **Recursos Disponibles**: Optimización según infraestructura institucional  
-        - **Políticas Educativas**: Cumplimiento de normativas y protocolos
-        - **Capacidad Docente**: Asignación inteligente de recursos humanos
-        - **Contexto Socioeconómico**: Adaptación a realidades estudiantiles
-        
-        📊 **Metodología Avanzada:**
-        1. **Análisis Predictivo**: Identificación de patrones de riesgo temprano
-        2. **Optimización Contextual**: Adaptación basada en recursos disponibles
-        3. **Priorización Inteligente**: Enfoque en máximo impacto demostrado
-        4. **Evaluación Continua**: Medición y ajuste de efectividad
-        
-        🎯 **Tipos de Recomendaciones Generadas:**
-        - Intervenciones académicas personalizadas
-        - Estrategias de apoyo emocional y motivacional
-        - Planes de mejora de asistencia y participación
-        - Programas de involucramiento parental
-        """)
-        
-        # Ejemplo de recomendaciones contextuales
-        with st.expander("📋 Ejemplos de Recomendaciones Contextuales", expanded=True):
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("""
-                **🎓 Para Estudiantes con Baja Asistencia:**
-                - Sistema de alertas tempranas a padres
-                - Tutorías de recuperación personalizadas
-                - Análisis de causas fundamentales
-                - Plan de mejora con hitos específicos
-                """)
-                
-                st.markdown("""
-                **📚 Para Bajo Rendimiento Académico:**
-                - Evaluación de estilos de aprendizaje
-                - Adaptación de metodologías de enseñanza
-                - Refuerzo en áreas específicas de conocimiento
-                - Programa de mentoría entre pares
-                """)
-            
-            with col2:
-                st.markdown("""
-                **😟 Para Problemas de Participación:**
-                - Estrategias de gamificación en clase
-                - Actividades colaborativas estructuradas
-                - Sistema de reconocimiento de logros
-                - Desarrollo de habilidades sociales
-                """)
-                
-                st.markdown("""
-                **🏫 Para Contextos Institucionales:**
-                - Optimización de recursos docentes
-                - Programas de desarrollo profesional
-                - Estrategias de comunicación con familias
-                - Planificación curricular contextualizada
-                """)
-    
-    with tab2:
-        st.subheader("📊 Visualizaciones Avanzadas y Analytics")
-        
-        st.markdown("""
-        ### 📈 **Dashboard de Analytics Predictivos**
-        
-        **Visualizaciones Interactivas Disponibles:**
-        
-        ✅ **Mapa de Riesgo Académico**
-           - Distribución geográfica de estudiantes en riesgo
-           - Heatmaps de factores críticos por zona
-           - Identificación de clusters de intervención
-        
-        ✅ **Tendencias Temporales Avanzadas**
-           - Evolución de indicadores clave por periodo académico
-           - Proyecciones predictivas semestrales con intervalos de confianza
-           - Análisis de estacionalidad y patrones cíclicos
-        
-        ✅ **Análisis Comparativo Inteligente**
-           - Benchmarking entre grupos, secciones y niveles
-           - Identificación de mejores prácticas institucionales
-           - Análisis de brechas de rendimiento
-        
-        ✅ **Dashboard Ejecutivo Integral**
-           - Métricas de impacto de intervenciones implementadas
-           - ROI de estrategias educativas
-           - Indicadores de eficiencia institucional
-        """)
-        
-        # Visualizaciones interactivas
-        st.markdown("---")
-        st.subheader("🔄 Visualizaciones en Tiempo Real")
-        
-        if df is not None:
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Gráfico de distribución de riesgo
-                if 'nivel_riesgo' in df.columns:
-                    risk_distribution = df['nivel_riesgo'].value_counts()
-                    fig_risk = px.pie(
-                        values=risk_distribution.values,
-                        names=risk_distribution.index,
-                        title="Distribución Actual de Riesgo Académico",
-                        color_discrete_sequence=['#2ecc71', '#f39c12', '#e74c3c']
-                    )
-                    st.plotly_chart(fig_risk, use_container_width=True)
-            
-            with col2:
-                # Gráfico de correlación entre asistencia y rendimiento
-                if all(col in df.columns for col in ['tasa_asistencia', 'promedio_calificaciones']):
-                    fig_scatter = px.scatter(
-                        df,
-                        x='tasa_asistencia',
-                        y='promedio_calificaciones',
-                        title="Relación Asistencia vs Rendimiento",
-                        trendline="lowess",
-                        color_discrete_sequence=['#3498db']
-                    )
-                    st.plotly_chart(fig_scatter, use_container_width=True)
-        
-        # Métricas de visualización
-        st.markdown("---")
-        st.subheader("📊 Métricas de Visualización")
-        
-        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-        
-        with metric_col1:
-            st.metric("Estudiantes Visualizados", f"{len(df) if df is not None else 0}")
-        
-        with metric_col2:
-            if df is not None and 'nivel_riesgo' in df.columns:
-                high_risk = len(df[df['nivel_riesgo'] == 'Alto']) if 'Alto' in df['nivel_riesgo'].values else 0
-                st.metric("Casos Críticos", high_risk)
-            else:
-                st.metric("Casos Críticos", "N/A")
-        
-        with metric_col3:
-            if df is not None and 'tasa_asistencia' in df.columns:
-                avg_attendance = df['tasa_asistencia'].mean()
-                st.metric("Asistencia Promedio", f"{avg_attendance:.1f}%")
-            else:
-                st.metric("Asistencia Promedio", "N/A")
-        
-        with metric_col4:
-            if df is not None and 'promedio_calificaciones' in df.columns:
-                avg_grades = df['promedio_calificaciones'].mean()
-                st.metric("Rendimiento Promedio", f"{avg_grades:.1f}/20")
-            else:
-                st.metric("Rendimiento Promedio", "N/A")
-    
-        with tab3:
-            st.subheader("🚀 Acciones Rápidas y Reportes")
-            
-            st.markdown("""
-            ### ⚡ **Acciones Inmediatas Disponibles**
-            
-            Ejecute análisis y generación de reportes con un solo clic:
-            """)
-            
-            # Botones de acción
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                if st.button("📊 Generar Dashboard Ejecutivo", use_container_width=True, key="adv_dash"):
-                    with st.spinner("Generando análisis ejecutivo..."):
-                        st.success("✅ Dashboard generado exitosamente")
-                        mostrar_dashboard_ejecutivo()
-            
-            with col2:
-                if st.button("🎯 Analizar Estudiantes Críticos", use_container_width=True, key="adv_criticos"):
-                    with st.spinner("Identificando casos prioritarios..."):
-                        estudiantes_criticos = identificar_estudiantes_criticos()
-                        st.success(f"✅ {len(estudiantes_criticos)} estudiantes identificados")
-                        mostrar_analisis_criticos(estudiantes_criticos)
-            
-            with col3:
-                if st.button("📋 Generar Reporte Institucional", use_container_width=True, key="adv_reporte"):
-                    with st.spinner("Compilando métricas institucionales ACTUALIZADAS..."):
-                        # 🔥 NUEVO: Generar reporte con datos actualizados
-                        reporte = generar_reporte_institucional()
-                        st.success("✅ Reporte institucional ACTUALIZADO generado")
-                        
-                        # Mostrar resumen del reporte
-                        st.subheader("📈 Resumen del Reporte Actualizado")
-                        
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric("Análisis Recientes", reporte['resumen_analisis']['total_analizados_recientemente'])
-                            st.metric("Estudiantes Total", reporte['metricas_principales']['total_estudiantes_institucion'])
-                        
-                        with col2:
-                            st.metric("Riesgo Alto", f"{reporte['metricas_principales']['tasa_riesgo_alto_analizados']}")
-                            st.metric("Tendencia", reporte['metricas_principales']['tendencia_general'])
-                        
-                        # Botón de descarga
-                        descargar_reporte(reporte)
-        
-        # Métricas en tiempo real
-        st.markdown("---")
-        st.subheader("📈 Métricas del Sistema en Tiempo Real")
-        
-        metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-        
-        with metric_col1:
-            st.metric(
-                label="Estudiantes Analizados", 
-                value=f"{obtener_total_estudiantes():,}",
-                delta="+12% vs mes anterior"
-            )
-        
-        with metric_col2:
-            st.metric(
-                label="Precisión del Modelo", 
-                value=f"{obtener_precision_modelo():.1f}%",
-                delta="+2.3%"
-            )
-        
-        with metric_col3:
-            st.metric(
-                label="Intervenciones Activas", 
-                value=f"{obtener_intervenciones_activas()}",
-                delta="+5 esta semana"
-            )
-        
-        with metric_col4:
-            st.metric(
-                label="Tasa de Mejora", 
-                value=f"{obtener_tasa_mejora():.1f}%",
-                delta="+1.8%"
-            )
-        
-        # Información adicional
-        st.markdown("---")
-        st.info("""
-        **💡 Pro Tip:** Utilice las pestañas superiores para navegar entre recomendaciones contextuales, 
-        visualizaciones avanzadas y acciones rápidas. Cada sección está diseñada para proporcionar 
-        insights específicos y herramientas de acción inmediata.
-        """)
-
-# Página 5: Sistema de Feedback
-elif page == "💬 Sistema de Feedback":
-    st.header("💬 Analytics de Feedback")
-    
-    try:
-        feedback_analytics = get_feedback_analytics()
-        stats = feedback_analytics.get('summary', {})
-        performance = stats.get('performance_metrics', {})
-        
-        st.subheader("📈 Métricas de Performance")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric("Feedback Total", stats.get('total_feedback', 0))
-        
-        with col2:
-            st.metric("Rating Promedio", f"{performance.get('average_rating', 0):.1f}/5")
-        
-        with col3:
-            implemented = performance.get('implemented_recommendations', 0)
-            total = performance.get('total_recommendations', 1)
-            st.metric("Tasa Implementación", f"{(implemented/total*100):.1f}%" if total > 0 else "0%")
-        
-        with col4:
-            effectiveness = performance.get('average_effectiveness', 0)
-            st.metric("Efectividad Promedio", f"{(effectiveness*100):.1f}%")
-        
-        # Gráficos de analytics
-        st.subheader("📊 Distribución de Ratings")
-        
-        # Datos de ejemplo para gráfico
-        rating_data = pd.DataFrame({
-            'Rating': ['1', '2', '3', '4', '5'],
-            'Cantidad': [2, 1, 5, 8, 12]
-        })
-        
-        fig_ratings = px.bar(
-            rating_data,
-            x='Rating',
-            y='Cantidad',
-            title="Distribución de Ratings de Usuarios",
-            color='Cantidad',
-            color_continuous_scale='Viridis'
-        )
-        st.plotly_chart(fig_ratings, use_container_width=True)
-        
-        # Mejoras del modelo
-        st.subheader("📈 Evolución del Modelo")
-        improvements = performance.get('model_improvements', [])
-        
-        if improvements:
-            improvement_data = pd.DataFrame(improvements)
-            fig_improvement = px.line(
-                improvement_data,
-                x='timestamp',
-                y='accuracy_change',
-                title="Evolución de la Precisión del Modelo",
-                markers=True
-            )
-            st.plotly_chart(fig_improvement, use_container_width=True)
-        else:
-            st.info("No hay datos de mejora del modelo disponibles aún")
-            
-    except Exception as e:
-        st.error(f"Error cargando analytics de feedback: {e}")
-
-# Página 6: Acerca del Sistema
-elif page == "ℹ️ Acerca del Sistema":
-    st.header("ℹ️ Acerca del Sistema Avanzado")
-    
-    st.markdown("""
-    ## 🎓 Sistema Inteligente de Recomendación Educativa - Versión Avanzada
-    
-    ### 🚀 Características Principales
-    
-    **🤖 IA Explicativa Avanzada:**
-    - Modelos de Machine Learning con comparación automática
-    - Explicabilidad SHAP para transparencia
-    - Sistema de aprendizaje continuo
-    
-    **📊 Analytics Predictivos:**
-    - Dashboard ejecutivo con métricas clave
-    - Análisis de tendencias y patrones
-    - Alertas proactivas de riesgo
-    
-    **🎯 Recomendaciones Contextuales:**
-    - Personalización basada en múltiples factores
-    - Consideración del contexto académico
-    - Estrategias validadas por datos
-    
-    **🔄 Aprendizaje Continuo:**
-    - Sistema de feedback integrado
-    - Actualización automática de modelos
-    - Mejora constante basada en experiencia
-    
-    ### 🛠️ Arquitectura Técnica
-    
-    - **Backend:** Python, Scikit-learn, Pandas, NumPy
-    - **ML:** Random Forest, Gradient Boosting, SVM
-    - **Explicabilidad:** SHAP, Feature Importance
-    - **Frontend:** Streamlit, Plotly, Matplotlib
-    - **Almacenamiento:** Sistema de archivos con versionado
-    
-    ### 📈 Métricas de Calidad
-    
-    - Precisión del modelo: > 95%
-    - Tiempo de respuesta: < 3 segundos
-    - Escalabilidad: Hasta 10,000 estudiantes
-    - Actualizaciones: En tiempo real con feedback
-    
-    ### 👥 Desarrollado para
-    
-    - Instituciones educativas
-    - Departamentos de orientación
-    - Tutores y docentes
-    - Administradores académicos
-    
-    **Versión:** 2.0.0 | **Última actualización:** """ + datetime.now().strftime("%Y-%m-%d") + """
-    """)
-
 # Footer mejorado
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 20px; color: #666;">
-    <small>🎓 Sistema Inteligente de Recomendación Educativa Avanzado v2.0 | 
+    <small>Sistema Inteligente de Recomendación Educativa Avanzado v2.0 | 
     IA Explicativa + Analytics Predictivos + Aprendizaje Continuo</small>
     <br>
-    <small>🚀 Desarrollado con Streamlit, Scikit-learn y SHAP | 
+    <small>Desarrollado con Streamlit, Scikit-learn y SHAP | 
     Última actualización: """ + datetime.now().strftime("%Y-%m-%d %H:%M") + """</small>
 </div>
 """, unsafe_allow_html=True)
+[file content end]
