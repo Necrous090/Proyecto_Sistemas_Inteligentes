@@ -18,7 +18,7 @@ from typing import List, Dict, Optional, Any
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Crear directorios necesarios para el feedback
+# Crear directorios necesarios
 try:
     os.makedirs('feedback_data/pending', exist_ok=True)
     os.makedirs('feedback_data/processed', exist_ok=True)
@@ -26,8 +26,248 @@ try:
     os.makedirs('feedback_data/analytics', exist_ok=True)
     os.makedirs('models', exist_ok=True)
     os.makedirs('logs', exist_ok=True)
+    os.makedirs('data_storage', exist_ok=True)  # Nuevo: directorio para almacenar datos
 except Exception as e:
     logger.warning(f"No se pudieron crear algunos directorios: {e}")
+
+# =============================================
+# SISTEMA DE ALMACENAMIENTO PERSISTENTE
+# =============================================
+
+def guardar_estudiante_analizado(student_input, predicted_risk, fecha_analisis=None):
+    """Guarda un estudiante analizado en el archivo JSON"""
+    try:
+        if fecha_analisis is None:
+            fecha_analisis = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Crear registro del estudiante
+        estudiante_registro = {
+            'id': f"EST_{datetime.now().strftime('%Y%m%d%H%M%S%f')}",
+            'fecha_analisis': fecha_analisis,
+            'datos_estudiante': student_input,
+            'predicted_risk': predicted_risk,
+            'calificacion': student_input.get('promedio_calificaciones', 0)
+        }
+        
+        # Cargar estudiantes existentes
+        estudiantes = cargar_estudiantes_analizados()
+        
+        # Agregar nuevo estudiante
+        estudiantes.append(estudiante_registro)
+        
+        # Guardar en archivo
+        with open('data_storage/estudiantes_analizados.json', 'w', encoding='utf-8') as f:
+            json.dump({'estudiantes': estudiantes}, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"Estudiante guardado: {estudiante_registro['id']}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error guardando estudiante: {e}")
+        return False
+
+def cargar_estudiantes_analizados():
+    """Carga todos los estudiantes analizados desde el archivo JSON"""
+    try:
+        archivo_path = 'data_storage/estudiantes_analizados.json'
+        
+        if not os.path.exists(archivo_path):
+            # Si no existe el archivo, crear uno con estructura básica
+            with open(archivo_path, 'w', encoding='utf-8') as f:
+                json.dump({'estudiantes': []}, f, indent=2, ensure_ascii=False)
+            return []
+        
+        with open(archivo_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        return data.get('estudiantes', [])
+        
+    except Exception as e:
+        logger.error(f"Error cargando estudiantes analizados: {e}")
+        return []
+
+def calcular_metricas_persistentes():
+    """Calcula métricas basadas en estudiantes almacenados"""
+    estudiantes = cargar_estudiantes_analizados()
+    
+    if not estudiantes:
+        return {
+            'total_analizados': 0,
+            'alto_riesgo_count': 0,
+            'suma_grades': 0,
+            'promedio_general': 0,
+            'ultimo_analisis': None,
+            'primer_analisis': None
+        }
+    
+    # Calcular métricas
+    total_analizados = len(estudiantes)
+    alto_riesgo_count = sum(1 for e in estudiantes if e.get('predicted_risk') == 'Alto')
+    suma_grades = sum(e.get('calificacion', 0) for e in estudiantes)
+    promedio_general = suma_grades / total_analizados if total_analizados > 0 else 0
+    
+    # Obtener fechas
+    fechas = [datetime.strptime(e['fecha_analisis'], "%Y-%m-%d %H:%M:%S") 
+              for e in estudiantes if 'fecha_analisis' in e]
+    
+    if fechas:
+        ultimo_analisis = max(fechas).strftime("%Y-%m-%d %H:%M")
+        primer_analisis = min(fechas).strftime("%Y-%m-%d %H:%M")
+    else:
+        ultimo_analisis = None
+        primer_analisis = None
+    
+    return {
+        'total_analizados': total_analizados,
+        'alto_riesgo_count': alto_riesgo_count,
+        'suma_grades': suma_grades,
+        'promedio_general': round(promedio_general, 2),
+        'ultimo_analisis': ultimo_analisis,
+        'primer_analisis': primer_analisis
+    }
+
+def obtener_estadisticas_detalladas():
+    """Obtiene estadísticas detalladas de los estudiantes almacenados"""
+    estudiantes = cargar_estudiantes_analizados()
+    
+    if not estudiantes:
+        return {
+            'distribucion_riesgo': {'Bajo': 0, 'Medio': 0, 'Alto': 0},
+            'promedios_por_riesgo': {'Bajo': 0, 'Medio': 0, 'Alto': 0},
+            'tendencias_mensuales': [],
+            'top_caracteristicas': []
+        }
+    
+    # Distribución de riesgo
+    distribucion_riesgo = {'Bajo': 0, 'Medio': 0, 'Alto': 0}
+    suma_grades_por_riesgo = {'Bajo': 0, 'Medio': 0, 'Alto': 0}
+    contador_por_riesgo = {'Bajo': 0, 'Medio': 0, 'Alto': 0}
+    
+    for estudiante in estudiantes:
+        riesgo = estudiante.get('predicted_risk', 'Bajo')
+        if riesgo in distribucion_riesgo:
+            distribucion_riesgo[riesgo] += 1
+            suma_grades_por_riesgo[riesgo] += estudiante.get('calificacion', 0)
+            contador_por_riesgo[riesgo] += 1
+    
+    # Promedios por riesgo
+    promedios_por_riesgo = {}
+    for riesgo in distribucion_riesgo.keys():
+        if contador_por_riesgo[riesgo] > 0:
+            promedios_por_riesgo[riesgo] = round(suma_grades_por_riesgo[riesgo] / contador_por_riesgo[riesgo], 2)
+        else:
+            promedios_por_riesgo[riesgo] = 0
+    
+    # Tendencias mensuales
+    tendencias_mensuales = []
+    if estudiantes:
+        # Agrupar por mes
+        meses = {}
+        for estudiante in estudiantes:
+            try:
+                fecha = datetime.strptime(estudiante['fecha_analisis'], "%Y-%m-%d %H:%M:%S")
+                mes_key = fecha.strftime("%Y-%m")
+                if mes_key not in meses:
+                    meses[mes_key] = {'total': 0, 'alto_riesgo': 0}
+                meses[mes_key]['total'] += 1
+                if estudiante.get('predicted_risk') == 'Alto':
+                    meses[mes_key]['alto_riesgo'] += 1
+            except:
+                continue
+        
+        for mes, datos in meses.items():
+            tendencias_mensuales.append({
+                'mes': mes,
+                'total_analizados': datos['total'],
+                'alto_riesgo': datos['alto_riesgo']
+            })
+    
+    # Características más comunes
+    caracteristicas = {}
+    for estudiante in estudiantes:
+        datos = estudiante.get('datos_estudiante', {})
+        for key, value in datos.items():
+            if isinstance(value, (int, float)):
+                if key not in caracteristicas:
+                    caracteristicas[key] = []
+                caracteristicas[key].append(value)
+    
+    top_caracteristicas = []
+    for key, valores in caracteristicas.items():
+        if valores:
+            top_caracteristicas.append({
+                'caracteristica': key,
+                'promedio': round(np.mean(valores), 2),
+                'min': round(min(valores), 2),
+                'max': round(max(valores), 2)
+            })
+    
+    return {
+        'distribucion_riesgo': distribucion_riesgo,
+        'promedios_por_riesgo': promedios_por_riesgo,
+        'tendencias_mensuales': tendencias_mensuales,
+        'top_caracteristicas': top_caracteristicas[:5]  # Top 5 características
+    }
+
+def exportar_datos_analizados(formato='json'):
+    """Exporta todos los datos analizados en diferentes formatos"""
+    estudiantes = cargar_estudiantes_analizados()
+    
+    if formato == 'json':
+        return json.dumps({'estudiantes': estudiantes}, indent=2, ensure_ascii=False)
+    elif formato == 'csv':
+        # Convertir a DataFrame
+        datos_limpios = []
+        for estudiante in estudiantes:
+            fila = {
+                'id': estudiante.get('id', ''),
+                'fecha_analisis': estudiante.get('fecha_analisis', ''),
+                'predicted_risk': estudiante.get('predicted_risk', '')
+            }
+            # Agregar datos del estudiante
+            datos_estudiante = estudiante.get('datos_estudiante', {})
+            for key, value in datos_estudiante.items():
+                fila[key] = value
+            datos_limpios.append(fila)
+        
+        df = pd.DataFrame(datos_limpios)
+        return df.to_csv(index=False, encoding='utf-8')
+    
+    return None
+
+def limpiar_datos_antiguos(dias_retener=30):
+    """Elimina datos más antiguos que X días"""
+    try:
+        estudiantes = cargar_estudiantes_analizados()
+        if not estudiantes:
+            return 0
+        
+        fecha_limite = datetime.now().timestamp() - (dias_retener * 24 * 60 * 60)
+        nuevos_estudiantes = []
+        eliminados = 0
+        
+        for estudiante in estudiantes:
+            try:
+                fecha_str = estudiante.get('fecha_analisis', '')
+                fecha = datetime.strptime(fecha_str, "%Y-%m-%d %H:%M:%S")
+                if fecha.timestamp() >= fecha_limite:
+                    nuevos_estudiantes.append(estudiante)
+                else:
+                    eliminados += 1
+            except:
+                # Si hay error al parsear la fecha, mantener el registro
+                nuevos_estudiantes.append(estudiante)
+        
+        # Guardar solo los registros recientes
+        with open('data_storage/estudiantes_analizados.json', 'w', encoding='utf-8') as f:
+            json.dump({'estudiantes': nuevos_estudiantes}, f, indent=2, ensure_ascii=False)
+        
+        logger.info(f"Limpieza completada: {eliminados} registros eliminados")
+        return eliminados
+        
+    except Exception as e:
+        logger.error(f"Error en limpieza de datos: {e}")
+        return 0
 
 # === DEFINIR FUNCIONES DUMMY REEMPLAZANDO LAS IMPORTACIONES FALLIDAS ===
 
@@ -421,71 +661,6 @@ def debug_feedback_system():
             }
         }
 
-# Funciones dummy para aprendizaje continuo
-def init_continuous_learning(feedback_system, model_training_module):
-    """Inicializar aprendizaje continuo - versión demo"""
-    class DummyContinuousLearningManager:
-        def __init__(self):
-            self.learning_metrics = {
-                'total_batches_processed': 0,
-                'total_feedback_learned': 0,
-                'model_versions_created': 0,
-                'last_processing_time': None,
-                'accuracy_improvements': []
-            }
-        
-        def check_and_process_feedback(self, model, le_risk, scaler, batch_threshold=5):
-            stats = get_feedback_stats()
-            pending = stats.get('pending_feedback', 0)
-            
-            if pending >= batch_threshold:
-                result = process_feedback(model, le_risk, scaler)
-                self.learning_metrics['total_batches_processed'] += 1
-                self.learning_metrics['total_feedback_learned'] += pending
-                self.learning_metrics['last_processing_time'] = datetime.now().isoformat()
-                
-                # Simular mejora
-                improvement = np.random.uniform(0.001, 0.01)
-                self.learning_metrics['accuracy_improvements'].append({
-                    'timestamp': datetime.now().isoformat(),
-                    'improvement': improvement
-                })
-                
-                return {
-                    'processed': True,
-                    'model_updated': True,
-                    'feedback_processed': pending,
-                    'accuracy_change': improvement
-                }
-            else:
-                return {
-                    'processed': False,
-                    'pending_feedback': pending,
-                    'needed_for_batch': batch_threshold - pending
-                }
-        
-        def get_learning_analytics(self):
-            return {
-                'continuous_learning': {
-                    'efficiency': {
-                        'efficiency_score': 0.85,
-                        'feedback_per_batch': 5.2,
-                        'utilization_rate': 78.5
-                    },
-                    'improvement_trend': {
-                        'trend': 'improving',
-                        'avg_improvement': 0.005,
-                        'total_improvement': 0.045
-                    }
-                }
-            }
-    
-    return DummyContinuousLearningManager()
-
-def get_continuous_learning_manager():
-    """Obtener gestor de aprendizaje continuo - versión demo"""
-    return None
-
 # =============================================
 # FUNCIONES AUXILIARES MEJORADAS
 # =============================================
@@ -515,19 +690,19 @@ def process_feedback_cleanup():
 
 def generate_feedback_report():
     """Generar reporte de feedback en formato JSON estructurado"""
-    total_analizados = st.session_state.get('total_analizados', 0)
-    alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
+    metricas = calcular_metricas_persistentes()
+    total_analizados = metricas['total_analizados']
+    alto_riesgo_count = metricas['alto_riesgo_count']
     
     tasa_riesgo_alto = (alto_riesgo_count / total_analizados * 100) if total_analizados > 0 else 0
-    eficacia = st.session_state.get('eficacia_intervenciones', 73.8)
     
     return {
         'fecha_generacion': datetime.now().strftime("%Y-%m-%d %H:%M"),
         'metricas_principales': {
             'total_estudiantes': total_analizados,
             'tasa_riesgo_alto': f"{tasa_riesgo_alto:.1f}%",
-            'eficacia_intervenciones': f"{eficacia:.1f}%",
-            'tendencia_general': 'Mejorando' if st.session_state.get('tendencia_positiva', False) else 'Estable'
+            'eficacia_intervenciones': 73.8,
+            'tendencia_general': 'Mejorando' if tasa_riesgo_alto < 20 else 'Estable'
         },
         'recomendaciones': [
             'Incrementar tutorías en matemáticas',
@@ -536,76 +711,245 @@ def generate_feedback_report():
         ]
     }
 
-def initialize_dashboard_metrics():
-    """Inicializar métricas del dashboard en session_state con valores base"""
-    if 'dashboard_metrics' not in st.session_state:
-        st.session_state.dashboard_metrics = {
-            'total_estudiantes_base': 1200,  # Base de datos inicial
-            'total_analizados': 0,           # Análisis individuales
-            'suma_calificaciones': 0,
-            'alto_riesgo_count': 0,
-            'eficacia_intervenciones': 73.8,
-            'ultima_actualizacion': datetime.now()
-        }
+# FUNCIONES AUXILIARES NUEVAS
+def mostrar_dashboard_ejecutivo():
+    """Muestra el dashboard ejecutivo interactivo"""
+    st.subheader("Dashboard Ejecutivo - Resumen Institucional")
+    
+    # Cargar métricas persistentes
+    metricas = calcular_metricas_persistentes()
+    
+    datos_ejemplo = {
+        'indicador': ['Total Analizados', 'Riesgo Alto', 'Promedio General', 'Eficacia'],
+        'actual': [
+            metricas['total_analizados'],
+            metricas['alto_riesgo_count'],
+            metricas['promedio_general'],
+            73.8
+        ],
+        'meta': [
+            metricas['total_analizados'] + 50,
+            max(0, metricas['alto_riesgo_count'] - 10),
+            min(20, metricas['promedio_general'] + 1),
+            80.0
+        ],
+        'tendencia': ['↗️', '↘️', '↗️', '→']
+    }
+    
+    df_metricas = pd.DataFrame(datos_ejemplo)
+    st.dataframe(df_metricas, use_container_width=True)
+    
+    # Gráfico de progreso
+    fig = go.Figure()
+    fig.add_trace(go.Bar(name='Actual', x=df_metricas['indicador'], y=df_metricas['actual']))
+    fig.add_trace(go.Bar(name='Meta', x=df_metricas['indicador'], y=df_metricas['meta']))
+    fig.update_layout(title="Progreso hacia Metas Institucionales")
+    st.plotly_chart(fig, use_container_width=True)
 
-def update_dashboard_metrics(student_grades, predicted_risk):
-    """Actualizar métricas del dashboard con nuevo análisis"""
-    # Asegurar que todas las variables existan
-    if 'total_analizados' not in st.session_state:
-        st.session_state.total_analizados = 0
-    if 'alto_riesgo_count' not in st.session_state:
-        st.session_state.alto_riesgo_count = 0
-    if 'suma_grades' not in st.session_state:
-        st.session_state.suma_grades = 0
-    if 'promedio_general' not in st.session_state:
-        st.session_state.promedio_general = 0
+def identificar_estudiantes_criticos():
+    """Identifica estudiantes que requieren intervención inmediata basándose en datos almacenados"""
+    estudiantes = cargar_estudiantes_analizados()
     
-    # Guardar timestamp del primer análisis
-    if st.session_state.total_analizados == 0:
-        st.session_state.primer_analisis = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # Filtrar estudiantes de alto riesgo
+    estudiantes_alto_riesgo = [
+        e for e in estudiantes 
+        if e.get('predicted_risk') == 'Alto'
+    ]
     
-    # Actualizar contadores
-    st.session_state.total_analizados += 1
-    st.session_state.suma_grades += student_grades
-    st.session_state.ultimo_analisis = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # Ordenar por fecha más reciente y limitar a 5
+    estudiantes_alto_riesgo.sort(
+        key=lambda x: x.get('fecha_analisis', ''), 
+        reverse=True
+    )
     
-    if predicted_risk == 'Alto':
-        st.session_state.alto_riesgo_count += 1
+    estudiantes_criticos = []
+    for i, estudiante in enumerate(estudiantes_alto_riesgo[:5], 1):
+        datos = estudiante.get('datos_estudiante', {})
+        estudiantes_criticos.append({
+            'nombre': f"Estudiante {i}",
+            'riesgo': 'Alto',
+            'asistencia': datos.get('tasa_asistencia', 0),
+            'rendimiento': datos.get('promedio_calificaciones', 0),
+            'fecha_analisis': estudiante.get('fecha_analisis', '')
+        })
     
-    # Calcular promedio general
-    if st.session_state.total_analizados > 0:
-        st.session_state.promedio_general = st.session_state.suma_grades / st.session_state.total_analizados
+    return estudiantes_criticos
 
-def get_total_estudiantes():
-    """Obtener el total de estudiantes (base + análisis)"""
-    initialize_dashboard_metrics()
-    base = st.session_state.dashboard_metrics['total_estudiantes_base']
-    analizados = st.session_state.dashboard_metrics['total_analizados']
-    return base + analizados
+def mostrar_analisis_criticos(estudiantes):
+    """Muestra análisis de estudiantes críticos"""
+    st.subheader("Estudiantes que Requieren Intervención Inmediata")
+    
+    for i, estudiante in enumerate(estudiantes, 1):
+        with st.expander(f"#{i} - {estudiante['nombre']} (Riesgo: {estudiante['riesgo']})"):
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Asistencia", f"{estudiante['asistencia']}%")
+            with col2:
+                st.metric("Rendimiento", f"{estudiante['rendimiento']}/20")
+            with col3:
+                st.metric("Fecha", estudiante['fecha_analisis'][:10])
+            with col4:
+                st.write("**Acción Recomendada:**")
+                st.write("Tutoría intensiva + seguimiento diario")
 
-def get_promedio_general():
-    """Calcular promedio general considerando base y análisis"""
-    initialize_dashboard_metrics()
+def generar_reporte_institucional():
+    """Genera reporte institucional descargable con datos ACTUALIZADOS"""
+    # Obtener métricas persistentes
+    metricas = calcular_metricas_persistentes()
+    estadisticas = obtener_estadisticas_detalladas()
     
-    # Promedio base del dataset (14/20 como ejemplo)
-    promedio_base = 14.0
-    total_base = st.session_state.dashboard_metrics['total_estudiantes_base']
+    total_analizados = metricas['total_analizados']
+    alto_riesgo_count = metricas['alto_riesgo_count']
+    promedio_general = metricas['promedio_general']
     
-    # Promedio de análisis individuales
-    suma_analizados = st.session_state.dashboard_metrics['suma_calificaciones']
-    total_analizados = st.session_state.dashboard_metrics['total_analizados']
+    # Calcular métricas actualizadas
+    total_estudiantes = 1200 + total_analizados  # Base + análisis nuevos
     
     if total_analizados > 0:
-        promedio_analizados = suma_analizados / total_analizados
+        tasa_riesgo_analizados = (alto_riesgo_count / total_analizados * 100)
+        eficacia_actual = min(73.8 + (total_analizados * 0.5), 95.0)  # Mejora con más análisis
     else:
-        promedio_analizados = 0
+        tasa_riesgo_analizados = 0
+        eficacia_actual = 73.8
     
-    # Promedio ponderado
-    if total_base + total_analizados > 0:
-        promedio_total = ((promedio_base * total_base) + (promedio_analizados * total_analizados)) / (total_base + total_analizados)
-        return round(promedio_total, 1)
+    # Determinar tendencia basada en los análisis recientes
+    if total_analizados == 0:
+        tendencia = "Sin datos recientes"
+    elif alto_riesgo_count == 0:
+        tendencia = "Excelente - Sin casos de alto riesgo"
+    elif (alto_riesgo_count / total_analizados) < 0.1:
+        tendencia = "Mejorando"
     else:
-        return promedio_base
+        tendencia = "Requiere atención"
+    
+    # Obtener recomendaciones basadas en los análisis recientes
+    recomendaciones = []
+    
+    if total_analizados > 0:
+        if alto_riesgo_count > 0:
+            recomendaciones.append(f"Intervención prioritaria para {alto_riesgo_count} estudiantes en riesgo alto")
+        
+        if promedio_general < 12:
+            recomendaciones.append("Reforzar programa de tutorías académicas")
+        elif promedio_general > 16:
+            recomendaciones.append("Implementar programas de enriquecimiento para estudiantes destacados")
+        
+        recomendaciones.append("Continuar con el sistema de análisis individualizado")
+    else:
+        recomendaciones = [
+            'Incrementar tutorías en matemáticas',
+            'Reforzar programa de asistencia', 
+            'Capacitación docente en metodologías activas'
+        ]
+    
+    # Agregar recomendación específica si hay muchos análisis
+    if total_analizados >= 10:
+        recomendaciones.append("Considerar expansión del sistema a más grupos")
+    
+    return {
+        'fecha_generacion': datetime.now().strftime("%Y-%m-%d %H:%M"),
+        'resumen_analisis': {
+            'total_analizados_recientemente': total_analizados,
+            'fecha_primer_analisis': metricas.get('primer_analisis', 'No disponible'),
+            'fecha_ultimo_analisis': metricas.get('ultimo_analisis', 'No disponible')
+        },
+        'metricas_principales': {
+            'total_estudiantes_institucion': total_estudiantes,
+            'estudiantes_base': 1200,
+            'analisis_individuales_realizados': total_analizados,
+            'tasa_riesgo_alto_analizados': f"{tasa_riesgo_analizados:.1f}%",
+            'promedio_general_analizados': f"{promedio_general:.1f}/20",
+            'eficacia_intervenciones': f"{eficacia_actual:.1f}%",
+            'tendencia_general': tendencia
+        },
+        'analisis_detallado': estadisticas,
+        'recomendaciones': recomendaciones,
+        'detalles_analisis_recientes': {
+            'estudiantes_alto_riesgo': alto_riesgo_count,
+            'estudiantes_medio_riesgo': total_analizados - alto_riesgo_count,
+            'suma_calificaciones': metricas['suma_grades'],
+            'promedio_calculado': promedio_general
+        }
+    }
+
+def descargar_reporte(reporte):
+    """Permite descargar el reporte generado"""
+    reporte_str = json.dumps(reporte, indent=2, ensure_ascii=False)
+    st.download_button(
+        label="Descargar Reporte Completo",
+        data=reporte_str,
+        file_name=f"reporte_institucional_{datetime.now().strftime('%Y%m%d')}.json",
+        mime="application/json"
+    )
+
+# === FUNCIONES DE MÉTRICAS (placeholder - implementar con lógica real) ===
+def obtener_total_estudiantes():
+    metricas = calcular_metricas_persistentes()
+    return 1200 + metricas['total_analizados']
+
+def obtener_precision_modelo():
+    return 94.2
+
+def obtener_intervenciones_activas():
+    metricas = calcular_metricas_persistentes()
+    return metricas['alto_riesgo_count'] * 3  # Estimación: 3 intervenciones por estudiante en riesgo
+
+def obtener_tasa_mejora():
+    metricas = calcular_metricas_persistentes()
+    if metricas['total_analizados'] > 10:
+        return min(73.8 + (metricas['total_analizados'] * 0.2), 95.0)
+    return 73.8
+
+# Cachear la carga de datos y modelo
+@st.cache_resource(show_spinner="Cargando datos y modelo de IA...")
+def load_model_and_data():
+    """Carga datos y modelo con manejo robusto de errores"""
+    try:
+        logger.info("Iniciando carga de datos y modelo...")
+        
+        # Cargar datos
+        df = load_student_data()
+        if df is None or df.empty:
+            logger.error("No se pudieron cargar los datos o el DataFrame está vacío")
+            st.error("""
+            Error: No se pudieron cargar los datos del estudiante
+            
+            Por favor verifica que:
+            - El archivo CSV esté en `data/student_risk_indicators_v2 (1).csv`
+            - El archivo tenga el formato correcto
+            - Los permisos de lectura estén configurados
+            """)
+            return None, None, None, None, None, None
+        
+        logger.info(f"Datos cargados: {len(df)} registros")
+        
+        # Preprocesar datos
+        X, y, le_risk, scaler = preprocess_student_data(df)
+        if any(item is None for item in [X, y, le_risk, scaler]):
+            logger.error("Error en el preprocesamiento de datos")
+            return None, None, None, None, None, None
+        
+        logger.info("Datos preprocesados correctamente")
+        
+        # Cargar modelo
+        model_data = load_latest_model()
+        if model_data is None:
+            logger.warning("No se encontró modelo guardado. Entrenando nuevo modelo...")
+            model, accuracy, _ = train_advanced_risk_model(X, y)
+            if model is None:
+                logger.error("Error entrenando el modelo")
+                return None, None, None, None, None, None
+            logger.info(f"Nuevo modelo entrenado con accuracy: {accuracy:.4f}")
+        else:
+            model = model_data['model']
+            logger.info("Modelo existente cargado correctamente")
+        
+        return df, X, y, model, le_risk, scaler
+    
+    except Exception as e:
+        logger.error(f"Error crítico en load_model_and_data: {e}")
+        st.error(f"Error crítico al cargar datos: {str(e)}")
+        return None, None, None, None, None, None
 
 # ========== AQUÍ COMIENZA EL CÓDIGO PRINCIPAL DE STREAMLIT ==========
 
@@ -910,205 +1254,6 @@ def generate_strategic_insights(df: pd.DataFrame) -> List[Dict]:
     
     return insights
 
-# FUNCIONES AUXILIARES NUEVAS
-def mostrar_dashboard_ejecutivo():
-    """Muestra el dashboard ejecutivo interactivo"""
-    st.subheader("Dashboard Ejecutivo - Resumen Institucional")
-    
-    # Datos de ejemplo - reemplazar con datos reales
-    datos_ejemplo = {
-        'indicador': ['Asistencia Promedio', 'Completación Tareas', 'Rendimiento Académico', 'Participación'],
-        'actual': [85.3, 78.2, 72.1, 65.4],
-        'meta': [90.0, 85.0, 80.0, 75.0],
-        'tendencia': ['↗️', '↗️', '→', '↘️']
-    }
-    
-    df_metricas = pd.DataFrame(datos_ejemplo)
-    st.dataframe(df_metricas, use_container_width=True)
-    
-    # Gráfico de progreso
-    fig = go.Figure()
-    fig.add_trace(go.Bar(name='Actual', x=df_metricas['indicador'], y=df_metricas['actual']))
-    fig.add_trace(go.Bar(name='Meta', x=df_metricas['indicador'], y=df_metricas['meta']))
-    fig.update_layout(title="Progreso hacia Metas Institucionales")
-    st.plotly_chart(fig, use_container_width=True)
-
-def identificar_estudiantes_criticos():
-    """Identifica estudiantes que requieren intervención inmediata"""
-    # Lógica para identificar estudiantes críticos
-    estudiantes_criticos = [
-        {'nombre': 'Estudiante A', 'riesgo': 'Alto', 'asistencia': 65, 'rendimiento': 45},
-        {'nombre': 'Estudiante B', 'riesgo': 'Alto', 'asistencia': 58, 'rendimiento': 52},
-        {'nombre': 'Estudiante C', 'riesgo': 'Medio-Alto', 'asistencia': 72, 'rendimiento': 61}
-    ]
-    return estudiantes_criticos
-
-def mostrar_analisis_criticos(estudiantes):
-    """Muestra análisis de estudiantes críticos"""
-    st.subheader("Estudiantes que Requieren Intervención Inmediata")
-    
-    for i, estudiante in enumerate(estudiantes, 1):
-        with st.expander(f"#{i} - {estudiante['nombre']} (Riesgo: {estudiante['riesgo']})"):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Asistencia", f"{estudiante['asistencia']}%")
-            with col2:
-                st.metric("Rendimiento", f"{estudiante['rendimiento']}%")
-            with col3:
-                st.write("**Acción Recomendada:**")
-                st.write("Tutoría intensiva + seguimiento diario")
-
-def generar_reporte_institucional():
-    """Genera reporte institucional descargable con datos ACTUALIZADOS"""
-    # Obtener métricas actuales de los análisis
-    total_analizados = st.session_state.get('total_analizados', 0)
-    alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
-    promedio_general = st.session_state.get('promedio_general', 0)
-    suma_grades = st.session_state.get('suma_grades', 0)
-    
-    # Calcular métricas actualizadas
-    total_estudiantes = 1200 + total_analizados  # Base + análisis nuevos
-    
-    if total_analizados > 0:
-        tasa_riesgo_analizados = (alto_riesgo_count / total_analizados * 100)
-        eficacia_actual = min(73.8 + (total_analizados * 0.5), 95.0)  # Mejora con más análisis
-    else:
-        tasa_riesgo_analizados = 0
-        eficacia_actual = 73.8
-    
-    # Determinar tendencia basada en los análisis recientes
-    if total_analizados == 0:
-        tendencia = "Sin datos recientes"
-    elif alto_riesgo_count == 0:
-        tendencia = "Excelente - Sin casos de alto riesgo"
-    elif (alto_riesgo_count / total_analizados) < 0.1:
-        tendencia = "Mejorando"
-    else:
-        tendencia = "Requiere atención"
-    
-    # Obtener recomendaciones basadas en los análisis recientes
-    recomendaciones = []
-    
-    if total_analizados > 0:
-        if alto_riesgo_count > 0:
-            recomendaciones.append(f"Intervención prioritaria para {alto_riesgo_count} estudiantes en riesgo alto")
-        
-        if promedio_general < 12:
-            recomendaciones.append("Reforzar programa de tutorías académicas")
-        elif promedio_general > 16:
-            recomendaciones.append("Implementar programas de enriquecimiento para estudiantes destacados")
-        
-        recomendaciones.append("Continuar con el sistema de análisis individualizado")
-    else:
-        recomendaciones = [
-            'Incrementar tutorías en matemáticas',
-            'Reforzar programa de asistencia', 
-            'Capacitación docente en metodologías activas'
-        ]
-    
-    # Agregar recomendación específica si hay muchos análisis
-    if total_analizados >= 10:
-        recomendaciones.append("Considerar expansión del sistema a más grupos")
-    
-    return {
-        'fecha_generacion': datetime.now().strftime("%Y-%m-%d %H:%M"),
-        'resumen_analisis': {
-            'total_analizados_recientemente': total_analizados,
-            'fecha_primer_analisis': st.session_state.get('primer_analisis', 'No disponible'),
-            'fecha_ultimo_analisis': st.session_state.get('ultimo_analisis', 'No disponible')
-        },
-        'metricas_principales': {
-            'total_estudiantes_institucion': total_estudiantes,
-            'estudiantes_base': 1200,
-            'analisis_individuales_realizados': total_analizados,
-            'tasa_riesgo_alto_analizados': f"{tasa_riesgo_analizados:.1f}%",
-            'promedio_general_analizados': f"{promedio_general:.1f}/20",
-            'eficacia_intervenciones': f"{eficacia_actual:.1f}%",
-            'tendencia_general': tendencia
-        },
-        'recomendaciones': recomendaciones,
-        'detalles_analisis_recientes': {
-            'estudiantes_alto_riesgo': alto_riesgo_count,
-            'estudiantes_medio_riesgo': total_analizados - alto_riesgo_count,
-            'suma_calificaciones': suma_grades,
-            'promedio_calculado': promedio_general
-        }
-    }
-
-def descargar_reporte(reporte):
-    """Permite descargar el reporte generado"""
-    reporte_str = json.dumps(reporte, indent=2, ensure_ascii=False)
-    st.download_button(
-        label="Descargar Reporte Completo",
-        data=reporte_str,
-        file_name=f"reporte_institucional_{datetime.now().strftime('%Y%m%d')}.json",
-        mime="application/json"
-    )
-
-# === FUNCIONES DE MÉTRICAS (placeholder - implementar con lógica real) ===
-def obtener_total_estudiantes():
-    return 1250
-
-def obtener_precision_modelo():
-    return 94.2
-
-def obtener_intervenciones_activas():
-    return 47
-
-def obtener_tasa_mejora():
-    return 68.5
-
-# Cachear la carga de datos y modelo
-@st.cache_resource(show_spinner="Cargando datos y modelo de IA...")
-def load_model_and_data():
-    """Carga datos y modelo con manejo robusto de errores"""
-    try:
-        logger.info("Iniciando carga de datos y modelo...")
-        
-        # Cargar datos
-        df = load_student_data()
-        if df is None or df.empty:
-            logger.error("No se pudieron cargar los datos o el DataFrame está vacío")
-            st.error("""
-            Error: No se pudieron cargar los datos del estudiante
-            
-            Por favor verifica que:
-            - El archivo CSV esté en `data/student_risk_indicators_v2 (1).csv`
-            - El archivo tenga el formato correcto
-            - Los permisos de lectura estén configurados
-            """)
-            return None, None, None, None, None, None
-        
-        logger.info(f"Datos cargados: {len(df)} registros")
-        
-        # Preprocesar datos
-        X, y, le_risk, scaler = preprocess_student_data(df)
-        if any(item is None for item in [X, y, le_risk, scaler]):
-            logger.error("Error en el preprocesamiento de datos")
-            return None, None, None, None, None, None
-        
-        logger.info("Datos preprocesados correctamente")
-        
-        # Cargar modelo
-        model_data = load_latest_model()
-        if model_data is None:
-            logger.warning("No se encontró modelo guardado. Entrenando nuevo modelo...")
-            model, accuracy, _ = train_advanced_risk_model(X, y)
-            if model is None:
-                logger.error("Error entrenando el modelo")
-                return None, None, None, None, None, None
-            logger.info(f"Nuevo modelo entrenado con accuracy: {accuracy:.4f}")
-        else:
-            model = model_data['model']
-            logger.info("Modelo existente cargado correctamente")
-        
-        return df, X, y, model, le_risk, scaler
-    
-    except Exception as e:
-        logger.error(f"Error crítico en load_model_and_data: {e}")
-        st.error(f"Error crítico al cargar datos: {str(e)}")
-        return None, None, None, None, None, None
-
 # Inicialización de la aplicación
 def initialize_app():
     """Inicializa la aplicación con manejo de estado mejorado"""
@@ -1120,14 +1265,16 @@ def initialize_app():
         st.session_state.feedback_submitted = False
         st.session_state.continuous_learning_initialized = False
         
-        # Inicializar todas las variables necesarias
-        st.session_state.total_analizados = 0
-        st.session_state.alto_riesgo_count = 0
-        st.session_state.promedio_general = 0
-        st.session_state.suma_grades = 0
+        # Cargar métricas persistentes
+        metricas = calcular_metricas_persistentes()
         
-        # Inicializar métricas del dashboard
-        initialize_dashboard_metrics()
+        # Inicializar variables del session_state con datos persistentes
+        st.session_state.total_analizados = metricas['total_analizados']
+        st.session_state.alto_riesgo_count = metricas['alto_riesgo_count']
+        st.session_state.promedio_general = metricas['promedio_general']
+        st.session_state.suma_grades = metricas['suma_grades']
+        st.session_state.ultimo_analisis = metricas['ultimo_analisis']
+        st.session_state.primer_analisis = metricas['primer_analisis']
     
     # Cargar datos y modelo
     with st.spinner("Cargando sistema de recomendación educativa avanzado..."):
@@ -1156,7 +1303,8 @@ with st.sidebar:
         [
             "Dashboard Principal",
             "Analytics Educativos", 
-            "Análisis Individual Avanzado"
+            "Análisis Individual Avanzado",
+            "Gestión de Datos"  # Nueva pestaña
         ],
         index=0
     )
@@ -1166,32 +1314,31 @@ with st.sidebar:
     # Estadísticas rápidas
     st.subheader("Estadísticas Rápidas")
 
-    if df is not None:
-        try:
-            total_base = 1200
-            total_analizados = st.session_state.get('total_analizados', 0)
-            total_estudiantes = total_base + total_analizados
-            
-            alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
-            promedio_general = st.session_state.get('promedio_general', 0)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("Estudiantes", f"{total_estudiantes:,}")
-                st.metric("Riesgo Alto", f"{alto_riesgo_count}")
-            with col2:
-                st.metric("Promedio", f"{promedio_general:.1f}/20")
-                if total_estudiantes > 0:
-                    st.metric("Tasa Riesgo", f"{(alto_riesgo_count/total_estudiantes*100):.1f}%")
-            
-            # Mostrar contador de análisis recientes
-            if total_analizados > 0:
-                st.markdown("---")
-                st.subheader("Análisis Recientes")
-                st.metric("Estudiantes Analizados", total_analizados)
-                
-        except Exception as e:
-            st.error(f"Error calculando estadísticas: {e}")
+    # Cargar métricas persistentes
+    metricas = calcular_metricas_persistentes()
+    total_base = 1200
+    total_analizados = metricas['total_analizados']
+    total_estudiantes = total_base + total_analizados
+    
+    alto_riesgo_count = metricas['alto_riesgo_count']
+    promedio_general = metricas['promedio_general']
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Estudiantes", f"{total_estudiantes:,}")
+        st.metric("Riesgo Alto", f"{alto_riesgo_count}")
+    with col2:
+        st.metric("Promedio", f"{promedio_general:.1f}/20")
+        if total_estudiantes > 0:
+            st.metric("Tasa Riesgo", f"{(alto_riesgo_count/total_estudiantes*100):.1f}%")
+    
+    # Mostrar contador de análisis recientes
+    if total_analizados > 0:
+        st.markdown("---")
+        st.subheader("Análisis Recientes")
+        st.metric("Estudiantes Analizados", total_analizados)
+        if metricas['ultimo_analisis']:
+            st.caption(f"Último: {metricas['ultimo_analisis']}")
     
     # Información del sistema
     st.markdown("---")
@@ -1218,13 +1365,14 @@ if page == "Dashboard Principal":
         st.stop()
     
     try:
-        # Usar las variables de session_state directamente
+        # Cargar métricas persistentes
+        metricas = calcular_metricas_persistentes()
         total_base = 1200
-        total_analizados = st.session_state.get('total_analizados', 0)
+        total_analizados = metricas['total_analizados']
         total_estudiantes = total_base + total_analizados
         
-        alto_riesgo_count = st.session_state.get('alto_riesgo_count', 0)
-        promedio_general = st.session_state.get('promedio_general', 0)
+        alto_riesgo_count = metricas['alto_riesgo_count']
+        promedio_general = metricas['promedio_general']
         
         # Métricas clave
         col1, col2, col3, col4 = st.columns(4)
@@ -1567,45 +1715,23 @@ elif page == "Analytics Educativos":
         
         with tab2:
             st.subheader("Análisis de Tendencias Temporales")
-            st.info("Esta funcionalidad requiere datos temporales. En una implementación completa, aquí se mostrarían tendencias a lo largo del tiempo.")
             
-            # Datos de ejemplo para tendencias
-            dates = pd.date_range(start='2024-01-01', periods=12, freq='M')
-            trend_data = pd.DataFrame({
-                'date': dates,
-                'avg_grades': np.random.normal(14, 1, 12),
-                'attendance_rate': np.random.normal(85, 3, 12),
-                'high_risk_students': np.random.randint(50, 150, 12)
-            })
+            # Mostrar tendencias de estudiantes analizados
+            estadisticas = obtener_estadisticas_detalladas()
+            tendencias_mensuales = estadisticas['tendencias_mensuales']
             
-            fig_trend = go.Figure()
-            fig_trend.add_trace(go.Scatter(
-                x=trend_data['date'],
-                y=trend_data['avg_grades'],
-                name='Promedio Calificaciones',
-                line=dict(color='#3498db', width=3)
-            ))
-            fig_trend.add_trace(go.Scatter(
-                x=trend_data['date'],
-                y=trend_data['attendance_rate'],
-                name='Tasa Asistencia',
-                line=dict(color='#2ecc71', width=3),
-                yaxis='y2'
-            ))
-            
-            fig_trend.update_layout(
-                title="Evolución de Métricas Clave (Ejemplo)",
-                xaxis_title="Fecha",
-                yaxis_title="Calificación Promedio",
-                yaxis2=dict(
-                    title="Tasa Asistencia (%)",
-                    overlaying='y',
-                    side='right'
-                ),
-                height=400
-            )
-            
-            st.plotly_chart(fig_trend, use_container_width=True)
+            if tendencias_mensuales:
+                df_tendencias = pd.DataFrame(tendencias_mensuales)
+                fig_trend = px.line(
+                    df_tendencias,
+                    x='mes',
+                    y='total_analizados',
+                    title="Tendencia Mensual de Análisis Realizados",
+                    markers=True
+                )
+                st.plotly_chart(fig_trend, use_container_width=True)
+            else:
+                st.info("No hay suficientes datos para mostrar tendencias temporales")
         
         with tab3:
             st.subheader("Analytics de Intervenciones")
@@ -1685,6 +1811,8 @@ elif page == "Análisis Individual Avanzado":
     **Complete el formulario para analizar el perfil de un estudiante y recibir recomendaciones personalizadas.**
     El sistema utiliza inteligencia artificial avanzada con explicabilidad (SHAP) para predecir el nivel de riesgo 
     y generar intervenciones específicas y contextuales.
+    
+    **Nota:** Los datos del estudiante se guardarán automáticamente para análisis futuros.
     """)
     
     # Inicializar estado de análisis si no existe
@@ -1742,8 +1870,19 @@ elif page == "Análisis Individual Avanzado":
                     X_sample = X.head(100) if X is not None else None
                     results = generate_recommendations(student_input, model, le_risk, scaler, X_sample)
                 
+                # GUARDAR ESTUDIANTE EN ALMACENAMIENTO PERSISTENTE
+                guardado_exitoso = guardar_estudiante_analizado(student_input, results['predicted_risk'])
+                
+                if guardado_exitoso:
+                    st.success("✓ Datos del estudiante guardados permanentemente")
+                
                 # Actualizar métricas del dashboard
-                update_dashboard_metrics(grades, results['predicted_risk'])
+                metricas = calcular_metricas_persistentes()
+                st.session_state.total_analizados = metricas['total_analizados']
+                st.session_state.alto_riesgo_count = metricas['alto_riesgo_count']
+                st.session_state.promedio_general = metricas['promedio_general']
+                st.session_state.suma_grades = metricas['suma_grades']
+                st.session_state.ultimo_analisis = metricas['ultimo_analisis']
                 
                 # Guardar en session_state
                 st.session_state.analysis_results = results
@@ -1883,6 +2022,151 @@ elif page == "Análisis Individual Avanzado":
             st.session_state.student_input = None
             st.rerun()
 
+# Página 4: Gestión de Datos
+elif page == "Gestión de Datos":
+    st.header("Gestión de Datos Analizados")
+    
+    # Métricas de almacenamiento
+    metricas = calcular_metricas_persistentes()
+    estadisticas = obtener_estadisticas_detalladas()
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Estudiantes Almacenados", metricas['total_analizados'])
+    
+    with col2:
+        st.metric("Riesgo Alto", metricas['alto_riesgo_count'])
+    
+    with col3:
+        st.metric("Promedio General", f"{metricas['promedio_general']}/20")
+    
+    with col4:
+        if metricas['ultimo_analisis']:
+            st.metric("Último Análisis", metricas['ultimo_analisis'][:10])
+        else:
+            st.metric("Último Análisis", "Nunca")
+    
+    st.markdown("---")
+    
+    # Distribución de riesgo
+    st.subheader("Distribución de Riesgo")
+    distribucion = estadisticas['distribucion_riesgo']
+    
+    if sum(distribucion.values()) > 0:
+        fig_dist = px.pie(
+            values=list(distribucion.values()),
+            names=list(distribucion.keys()),
+            title="Distribución de Riesgo entre Estudiantes Analizados",
+            color_discrete_sequence=['#2ecc71', '#f39c12', '#e74c3c']
+        )
+        st.plotly_chart(fig_dist, use_container_width=True)
+    
+    # Tendencias mensuales
+    st.subheader("Tendencias Mensuales")
+    tendencias = estadisticas['tendencias_mensuales']
+    
+    if tendencias:
+        df_tendencias = pd.DataFrame(tendencias)
+        
+        fig_trend = go.Figure()
+        fig_trend.add_trace(go.Scatter(
+            x=df_tendencias['mes'],
+            y=df_tendencias['total_analizados'],
+            name='Total Analizados',
+            mode='lines+markers',
+            line=dict(color='#3498db', width=3)
+        ))
+        fig_trend.add_trace(go.Scatter(
+            x=df_tendencias['mes'],
+            y=df_tendencias['alto_riesgo'],
+            name='Alto Riesgo',
+            mode='lines+markers',
+            line=dict(color='#e74c3c', width=3)
+        ))
+        
+        fig_trend.update_layout(
+            title="Evolución de Análisis Mensuales",
+            xaxis_title="Mes",
+            yaxis_title="Cantidad",
+            height=400
+        )
+        
+        st.plotly_chart(fig_trend, use_container_width=True)
+    
+    # Características principales
+    st.subheader("Características Principales")
+    caracteristicas = estadisticas['top_caracteristicas']
+    
+    if caracteristicas:
+        df_caracteristicas = pd.DataFrame(caracteristicas)
+        st.dataframe(df_caracteristicas, use_container_width=True)
+    
+    # Herramientas de gestión
+    st.markdown("---")
+    st.subheader("Herramientas de Gestión")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("Exportar Datos (JSON)", use_container_width=True):
+            datos_json = exportar_datos_analizados('json')
+            st.download_button(
+                label="Descargar JSON",
+                data=datos_json,
+                file_name=f"estudiantes_analizados_{datetime.now().strftime('%Y%m%d')}.json",
+                mime="application/json"
+            )
+    
+    with col2:
+        if st.button("Exportar Datos (CSV)", use_container_width=True):
+            datos_csv = exportar_datos_analizados('csv')
+            st.download_button(
+                label="Descargar CSV",
+                data=datos_csv,
+                file_name=f"estudiantes_analizados_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv"
+            )
+    
+    with col3:
+        if st.button("Limpiar Datos Antiguos", use_container_width=True):
+            eliminados = limpiar_datos_antiguos(dias_retener=30)
+            if eliminados > 0:
+                st.success(f"✓ {eliminados} registros antiguos eliminados")
+                st.rerun()
+            else:
+                st.info("No se encontraron registros antiguos para eliminar")
+    
+    # Listado de estudiantes
+    st.markdown("---")
+    st.subheader("Listado de Estudiantes Analizados")
+    
+    estudiantes = cargar_estudiantes_analizados()
+    
+    if estudiantes:
+        # Ordenar por fecha más reciente
+        estudiantes.sort(key=lambda x: x.get('fecha_analisis', ''), reverse=True)
+        
+        # Mostrar los últimos 20
+        for i, estudiante in enumerate(estudiantes[:20], 1):
+            with st.expander(f"Estudiante {i}: {estudiante.get('id', 'N/A')} - {estudiante.get('fecha_analisis', '')[:16]}"):
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.write("**Datos del Estudiante:**")
+                    datos = estudiante.get('datos_estudiante', {})
+                    for key, value in datos.items():
+                        st.write(f"- {key}: {value}")
+                
+                with col2:
+                    st.write("**Resultados del Análisis:**")
+                    st.write(f"- Riesgo: {estudiante.get('predicted_risk', 'N/A')}")
+                    st.write(f"- Fecha: {estudiante.get('fecha_analisis', 'N/A')}")
+        
+        st.info(f"Mostrando {min(20, len(estudiantes))} de {len(estudiantes)} estudiantes analizados")
+    else:
+        st.info("No hay estudiantes analizados aún")
+
 # Footer mejorado
 st.markdown("---")
 st.markdown("""
@@ -1894,4 +2178,3 @@ st.markdown("""
     Última actualización: """ + datetime.now().strftime("%Y-%m-%d %H:%M") + """</small>
 </div>
 """, unsafe_allow_html=True)
-
