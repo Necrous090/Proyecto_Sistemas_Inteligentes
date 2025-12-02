@@ -1,5 +1,3 @@
-[file name]: streamlit_app.py
-[file content begin]
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -1896,4 +1894,4 @@ st.markdown("""
     Última actualización: """ + datetime.now().strftime("%Y-%m-%d %H:%M") + """</small>
 </div>
 """, unsafe_allow_html=True)
-[file content end]
+
