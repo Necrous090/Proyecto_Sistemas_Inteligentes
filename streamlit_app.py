@@ -362,7 +362,7 @@ def train_advanced_risk_model(X, y):
     
     return model, accuracy, feature_importance
 
-def generate_recommendations(student_input, model, le_risk, scaler, X_sample):
+def generate_recommendations(student_input, model, le_risk, scaler, X_sample=None):
     """Generar recomendaciones personalizadas - versión corregida"""
     try:
         # LÓGICA MEJORADA BASADA EN DATOS REALES
@@ -1867,9 +1867,17 @@ elif page == "Análisis Individual Avanzado":
                 
                 # Generar recomendaciones
                 with st.spinner("Analizando datos con IA avanzada..."):
-                    X_sample = X.head(100) if X is not None else None
+                    # Obtener una muestra de X (si es un array NumPy)
+                    if X is not None:
+                        if hasattr(X, 'head'):  # Si es DataFrame
+                            X_sample = X.head(100)
+                        else:  # Si es array NumPy
+                            X_sample = X[:100] if len(X) > 100 else X
+                    else:
+                        X_sample = None
+                    
                     results = generate_recommendations(student_input, model, le_risk, scaler, X_sample)
-                
+
                 # GUARDAR ESTUDIANTE EN ALMACENAMIENTO PERSISTENTE
                 guardado_exitoso = guardar_estudiante_analizado(student_input, results['predicted_risk'])
                 
