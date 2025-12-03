@@ -18,7 +18,7 @@ Permite a docentes, orientadores y administradores tomar decisiones proactivas, 
 Desarrollar una herramienta analítica versátil que identifique patrones ocultos, prediga necesidades futuras y proponga soluciones concretas basadas en Inteligencia Artificial.
 
 ## 📁 Estructura del Proyecto
-``bash
+```bash
 ProyectoFinalSI/
 ├── streamlit_app.py
 ├── data/
@@ -37,8 +37,9 @@ ProyectoFinalSI/
 ├── .streamlit/
 │   └── config.toml
 ├── requirements.txt
-└── README.md``
+└── README.md```
 
+---
 
 ## 🚀 Cómo ejecutar
 1. Instalar dependencias: `pip install -r requirements.txt`
@@ -57,6 +58,7 @@ La aplicación se abrirá en:
 4. Seleccionar el archivo principal:
 5. streamlit_app.py
 6. Desplegar y compartir
+
 
 
 
