@@ -17,6 +17,7 @@ Permite a docentes, orientadores y administradores tomar decisiones proactivas, 
 ## 🎯 Objetivo
 Desarrollar una herramienta analítica versátil que identifique patrones ocultos, prediga necesidades futuras y proponga soluciones concretas basadas en Inteligencia Artificial.
 
+## 📁 Estructura del Proyecto
 ProyectoFinalSI/
 ├── streamlit_app.py
 ├── data/
@@ -54,5 +55,6 @@ La aplicación se abrirá en:
 4. Seleccionar el archivo principal:
 5. streamlit_app.py
 6. Desplegar y compartir
+
 
 
