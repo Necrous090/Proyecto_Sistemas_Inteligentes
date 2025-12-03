@@ -17,24 +17,23 @@ Permite a docentes, orientadores y administradores tomar decisiones proactivas, 
 ## 🎯 Objetivo
 Desarrollar una herramienta analítica versátil que identifique patrones ocultos, prediga necesidades futuras y proponga soluciones concretas basadas en Inteligencia Artificial.
 
-```bash
 ProyectoFinalSI/
 ├── streamlit_app.py
 ├── data/
-│   └── student_risk_indicators_v2 (1).csv
+│ └── student_risk_indicators_v2 (1).csv
 ├── src/
-│   ├── data/
-│   │   └── data_loader.py
-│   ├── preprocessing.py
-│   ├── ml/
-│   │   └── model_training.py
-│   ├── recommendation_system.py
-│   └── feedback_system.py
+│ ├── data/
+│ │ └── data_loader.py
+│ ├── preprocessing.py
+│ ├── ml/
+│ │ └── model_training.py
+│ ├── recommendation_system.py
+│ └── feedback_system.py
 ├── models/
 ├── feedback_data/
 ├── logs/
 ├── .streamlit/
-│   └── config.toml
+│ └── config.toml
 ├── requirements.txt
 └── README.md
 
@@ -55,4 +54,5 @@ La aplicación se abrirá en:
 4. Seleccionar el archivo principal:
 5. streamlit_app.py
 6. Desplegar y compartir
+
 
