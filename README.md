@@ -6,40 +6,16 @@ El Sistema Inteligente de Recomendación Educativa es una plataforma avanzada qu
 Permite a docentes, orientadores y administradores tomar decisiones proactivas, optimizar recursos educativos y aplicar intervenciones oportunas.
 
 ## 🚀Características Principales
-- 📊 Análisis predictivo del riesgo académico
-- 🎯 Recomendaciones personalizadas por perfil
-- 🧠 Justificación basada en IA mediante SHAP
-- 🔄 Aprendizaje continuo mediante sistema de feedback
-- 📈 Visualizaciones interactivas
-- 📱 Interfaz intuitiva con Streamlit
-- 🔐 Manejo seguro y responsable de datos
+- 📊 Análisis predictivo del riesgo académico  
+- 🎯 Recomendaciones personalizadas por perfil  
+- 🧠 Justificación basada en IA mediante SHAP  
+- 🔄 Aprendizaje continuo mediante sistema de feedback  
+- 📈 Visualizaciones interactivas  
+- 📱 Interfaz intuitiva con Streamlit  
+- 🔐 Manejo seguro y responsable de datos  
 
 ## 🎯 Objetivo
 Desarrollar una herramienta analítica versátil que identifique patrones ocultos, prediga necesidades futuras y proponga soluciones concretas basadas en Inteligencia Artificial.
-
-## 📁 Estructura del Proyecto
-```bash
-ProyectoFinalSI/
-├── streamlit_app.py
-├── data/
-│   └── student_risk_indicators_v2 (1).csv
-├── src/
-│   ├── data/
-│   │   └── data_loader.py
-│   ├── preprocessing.py
-│   ├── ml/
-│   │   └── model_training.py
-│   ├── recommendation_system.py
-│   └── feedback_system.py
-├── models/
-├── feedback_data/
-├── logs/
-├── .streamlit/
-│   └── config.toml
-├── requirements.txt
-└── README.md```
-
----
 
 ## 🚀 Cómo ejecutar
 1. Instalar dependencias: `pip install -r requirements.txt`
@@ -59,7 +35,24 @@ La aplicación se abrirá en:
 5. streamlit_app.py
 6. Desplegar y compartir
 
-
-
-
-
+## 📁 Estructura del Proyecto
+```bash
+ProyectoFinalSI/
+├── streamlit_app.py
+├── data/
+│   └── student_risk_indicators_v2 (1).csv
+├── src/
+│   ├── data/
+│   │   └── data_loader.py
+│   ├── preprocessing.py
+├── ml/
+│   └── model_training.py
+├── recommendation_system.py
+├── feedback_system.py
+├── models/
+├── feedback_data/
+├── logs/
+├── .streamlit/
+│   └── config.toml
+├── requirements.txt
+└── README.md
